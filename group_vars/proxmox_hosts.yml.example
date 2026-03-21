@@ -1,0 +1,14 @@
+---
+# Container IDs
+dns_ctid: 100
+tailscale_ctid: 101
+
+# Local IPv4 subnet for firewall ipsets
+local_ipv4_subnet: "192.168.1.0/24"
+
+# IPv6 prefixes allowed in the Tailscale container's ipfilter.
+# Must cover addresses the container receives via SLAAC.
+ipfilter_v6_prefixes:
+  - "XXXX:XXXX::/32"  # ISP GUA range (check your delegated prefix)
+  - "fd00::/8"         # ULA
+  - "fe80::/10"        # Link-local

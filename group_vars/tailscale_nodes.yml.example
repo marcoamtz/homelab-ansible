@@ -1,0 +1,19 @@
+---
+# Tailscale auth key — generate at https://login.tailscale.com/admin/settings/keys
+tailscale_auth_key: "tskey-auth-XXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+# Static ULA address — assigned inside the container alongside SLAAC (ip6=auto in Proxmox)
+ula_address: "fd00:0:0:1::XXX/64"
+
+# Tailscale arguments:
+# 1. advertise-routes: Advertises subnets to Tailscale.
+# 2. advertise-exit-node: Advertises the exit node to Tailscale.
+# 3. accept-routes: Accepts routes from other subnets that might be added later.
+# 4. stateful-filtering=false: Disables connection tracking so LAN and tailnet
+#    devices can freely initiate traffic in both directions (required for subnet
+#    routers and exit nodes).
+tailscale_args: >-
+  --advertise-routes=192.168.1.0/24,fd00:0:0:1::/64
+  --advertise-exit-node
+  --accept-routes
+  --stateful-filtering=false

@@ -1,0 +1,5 @@
+group_vars/dns_servers.yml
+group_vars/tailscale_nodes.yml
+group_vars/proxmox_hosts.yml
+inventory.ini
+*.retry

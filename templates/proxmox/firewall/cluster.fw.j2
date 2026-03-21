@@ -1,0 +1,38 @@
+[OPTIONS]
+
+enable: 1
+
+[IPSET local_net]
+
+{{ local_ipv4_subnet }}
+::1
+fd00::/8
+fe80::/10
+
+[IPSET tailscale_net]
+
+100.64.0.0/10
+fd7a:115c:a1e0::/48
+
+[group dns_dhcp_services] # Rules for NextDNS and dnsmasq
+
+IN ACCEPT -source +dc/local_net -p udp -dport 53 -log nolog # DNS Queries (UDP)
+IN ACCEPT -source +dc/local_net -p tcp -dport 53 -log nolog # DNS Queries (TCP)
+IN ACCEPT -p udp -dport 67 -log nolog # DHCP Server
+IN ACCEPT -source +dc/local_net -p udp -dport 5353 -log nolog # mDNS Discovery
+IN ACCEPT -source +dc/local_net -p tcp -dport 80 -log nolog # LXC Web Dashboards
+IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping from LAN
+IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
+
+[group management]
+
+|OUT ACCEPT -p udp -log nolog # Allow outbound UDP
+OUT ACCEPT -p tcp -log nolog # Allow outbound TCP
+IN ACCEPT -source +dc/local_net -p tcp -dport 22 -log nolog # Allow SSH Management
+IN ACCEPT -source +dc/local_net -p tcp -dport 8006 -log nolog # Allow Proxmox Web UI
+
+[group tailscale_service]
+
+IN ACCEPT -source +dc/tailscale_net -log nolog # Exit Node: Tailscale to WAN
+IN ACCEPT -source +dc/tailscale_net -dest +dc/local_net -log nolog # Subnet Routing: Tailscale to Home
+IN ACCEPT -p udp -dport 41641 -log nolog # Tailscale WireGuard Port

@@ -1,0 +1,29 @@
+---
+- name: Deploy Proxmox Firewall Configuration
+  hosts: proxmox_hosts
+  become: yes
+
+  tasks:
+    - name: Deploy cluster firewall config
+      template:
+        src: proxmox/firewall/cluster.fw.j2
+        dest: /etc/pve/firewall/cluster.fw
+        owner: root
+        group: www-data
+        mode: "0640"
+
+    - name: Deploy DNS container firewall config
+      template:
+        src: proxmox/firewall/ct-dns.fw.j2
+        dest: "/etc/pve/firewall/{{ dns_ctid }}.fw"
+        owner: root
+        group: www-data
+        mode: "0640"
+
+    - name: Deploy Tailscale container firewall config
+      template:
+        src: proxmox/firewall/ct-tailscale.fw.j2
+        dest: "/etc/pve/firewall/{{ tailscale_ctid }}.fw"
+        owner: root
+        group: www-data
+        mode: "0640"

@@ -1,0 +1,38 @@
+domain-needed
+localise-queries
+bogus-priv
+
+no-negcache
+no-resolv
+no-poll
+
+interface=lo
+interface={{ network_interface }}
+
+# Use bind-dynamic instead of bind-interfaces for virtual networks like Tailscale
+#bind-interfaces
+bind-dynamic
+
+cache-size=10000
+
+use-stale-cache
+fast-dns-retry
+edns-packet-max=1232
+
+server=127.0.0.1#{{ nextdns_listen_port }}
+server=::1#{{ nextdns_listen_port }}
+
+dns-forward-max=350
+
+expand-hosts
+
+min-cache-ttl=300
+max-cache-ttl=3600
+
+#local-service
+dhcp-name-match=set:hostname-ignore,wpad
+dhcp-name-match=set:hostname-ignore,localhost
+dhcp-ignore-names=tag:hostname-ignore
+
+add-mac
+add-subnet=32,128

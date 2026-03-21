@@ -1,0 +1,17 @@
+[OPTIONS]
+
+enable: 1
+ipfilter: 1
+radv: 1
+
+[IPSET ipfilter-net0] # Allowed source IPs for net0
+
+{% for prefix in ipfilter_v6_prefixes %}
+{{ prefix }}
+{% endfor %}
+
+[RULES]
+
+GROUP tailscale_service
+GROUP dns_dhcp_services
+GROUP management

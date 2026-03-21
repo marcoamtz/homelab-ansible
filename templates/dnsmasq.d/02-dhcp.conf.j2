@@ -1,0 +1,27 @@
+dhcp-authoritative
+#dhcp-rapid-commit
+dhcp-sequential-ip
+dhcp-lease-max={{ dhcp_lease_max }}
+dhcp-option=3,{{ gateway_ip }}
+
+dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }},{{ dhcp_lease_time }}
+
+# Static DHCP reservations
+{% for device in static_leases %}
+dhcp-host={{ device.mac }},{{ device.ip }},{{ device.name }}
+{% endfor %}
+
+# Bypass devices — get router DNS instead of NextDNS
+{% for device in bypass_devices %}
+dhcp-host={{ device.mac }},{{ device.ip }},{{ device.name }},set:altdns
+{% endfor %}
+
+# IPv4 DNS: bypass → router, default → NextDNS
+dhcp-option=tag:altdns,6,{{ gateway_ip }}
+dhcp-option=6,{{ dns_server_ip }}
+
+#quiet-dhcp
+#quiet-dhcp6
+
+domain={{ domain }}
+local=/{{ domain }}/

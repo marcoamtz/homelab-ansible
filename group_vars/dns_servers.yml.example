@@ -1,0 +1,33 @@
+---
+# https://my.nextdns.io — your 6-character profile ID
+nextdns_id: "XXXXXX"
+
+network_interface: "eth0"
+domain: "home.arpa"
+
+dns_server_ip: "192.168.1.210"
+gateway_ip: "192.168.1.1"
+ipv6_prefix: "fd00:0:0:1"
+dns_server_ipv6: "{{ ipv6_prefix }}::210"
+gateway_ipv6: "{{ ipv6_prefix }}::1"
+
+dhcp_range_start: "192.168.1.100"
+dhcp_range_end: "192.168.1.200"
+dhcp_lease_time: "12h"
+dhcp_lease_max: 100
+
+nextdns_listen_port: 5053
+
+tailscale_domain: "example.ts.net"
+
+# Devices that bypass NextDNS filtering (receive router DNS instead).
+# These also get static DHCP leases from the entries below.
+bypass_devices:
+  - { mac: "AA:BB:CC:DD:EE:01", ip: "192.168.1.250", name: "device-bypass-1" }
+  - { mac: "AA:BB:CC:DD:EE:02", ip: "192.168.1.251", name: "device-bypass-2" }
+
+# Static DHCP reservations (non-bypass devices)
+static_leases:
+  - { mac: "AA:BB:CC:DD:EE:10", ip: "192.168.1.2", name: "router" }
+  - { mac: "AA:BB:CC:DD:EE:11", ip: "192.168.1.3", name: "switch" }
+  - { mac: "AA:BB:CC:DD:EE:12", ip: "192.168.1.5", name: "nas" }

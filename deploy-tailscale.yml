@@ -1,0 +1,80 @@
+---
+- name: Deploy Tailscale Bridge (LXC Optimized)
+  hosts: tailscale_nodes
+  become: yes
+
+  tasks:
+    - name: Install system requirements
+      apt:
+        name: [curl, gnupg, locales, ca-certificates]
+        state: present
+        update_cache: yes
+
+    - name: Fix locales
+      command: locale-gen en_US.UTF-8
+      args:
+        creates: /usr/lib/locale/en_US.utf8
+
+    # WARNING: Pipes a remote script to shell as root. This is Tailscale's official
+    # install method, but carries inherent supply-chain risk.
+    - name: Bootstrap Tailscale CLI
+      shell: "curl -fsSL https://tailscale.com/install.sh | sh"
+      args:
+        creates: /usr/bin/tailscale
+
+    # Write directly to sysctl.conf — the sysctl module's reload can silently
+    # fail inside Proxmox LXC containers.
+    - name: Deploy sysctl configuration
+      copy:
+        content: |
+          net.ipv4.ip_forward=1
+          net.ipv6.conf.all.forwarding=1
+          net.ipv6.conf.all.accept_ra=2
+        dest: /etc/sysctl.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    # Always force-apply — LXC hosts can reset forwarding on container restart.
+    - name: Apply IP forwarding
+      command: sysctl -p
+      changed_when: false
+
+    # Ensure forwarding survives container restarts — LXC does not reliably
+    # run sysctl.conf at boot.
+    - name: Apply IP forwarding on boot
+      cron:
+        name: "sysctl-forwarding"
+        special_time: reboot
+        job: "/sbin/sysctl -p"
+
+    # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
+    - name: Assign static ULA address
+      command: ip -6 addr add {{ ula_address }} dev eth0
+      register: ula_result
+      changed_when: ula_result.rc == 0
+      failed_when: >
+        ula_result.rc != 0 and
+        'RTNETLINK answers: File exists' not in ula_result.stderr
+
+    - name: Authenticate and start Tailscale
+      command: >
+        tailscale up
+        --authkey={{ tailscale_auth_key }}
+        {{ tailscale_args }}
+      register: ts_up
+      changed_when: "'Success' in ts_up.stdout"
+      no_log: true
+
+    # Use systemctl directly — the Ansible systemd module fails to enumerate
+    # services inside Proxmox LXC containers.
+    - name: Enable and start Tailscale
+      command: systemctl enable --now tailscaled
+      register: service_result
+      changed_when: "'Created symlink' in service_result.stderr"
+
+    - name: Verify Tailscale is online
+      command: tailscale ip -4
+      register: ts_ip
+      changed_when: false
+      failed_when: ts_ip.rc != 0

@@ -1,0 +1,121 @@
+---
+- name: Deploy NextDNS and Dnsmasq (LXC Optimized)
+  hosts: dns_servers
+  become: yes
+
+  vars:
+    dnsmasq_configs:
+      - 01-base.conf
+      - 02-dhcp.conf
+      - 06-rfc6761.conf
+
+  tasks:
+    - name: Install system requirements
+      apt:
+        name: [dnsmasq, curl, gnupg, debian-archive-keyring, dnsutils]
+        state: present
+        update_cache: yes
+
+    # WARNING: Pipes a remote script to shell as root. This is NextDNS's official
+    # install method, but carries inherent supply-chain risk. Pin to the apt repo
+    # if NextDNS publishes a stable signing key + source list.
+    - name: Bootstrap NextDNS CLI
+      shell: "curl -sL https://nextdns.io/install | sh -s -- -id {{ nextdns_id }} -setup-router=false < /dev/null"
+      args:
+        creates: /usr/bin/nextdns
+      no_log: true
+      notify: Reload systemd
+
+    - name: Upgrade NextDNS CLI via apt
+      apt:
+        name: nextdns
+        state: latest
+      notify: Restart nextdns
+
+    - name: Ensure dnsmasq.d directory exists
+      file:
+        path: /etc/dnsmasq.d
+        state: directory
+        mode: "0755"
+
+    - name: Deploy dnsmasq configurations
+      template:
+        src: "dnsmasq.d/{{ item }}.j2"
+        dest: "/etc/dnsmasq.d/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ dnsmasq_configs }}"
+      notify: Restart dnsmasq
+
+    - name: Find unmanaged dnsmasq configs
+      find:
+        paths: /etc/dnsmasq.d
+        patterns: "*.conf"
+      register: existing_configs
+
+    - name: Remove stale dnsmasq configs
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ existing_configs.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: item.path | basename not in dnsmasq_configs
+      notify: Restart dnsmasq
+
+    - name: Deploy NextDNS configuration
+      template:
+        src: nextdns.conf.j2
+        dest: /etc/nextdns.conf
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart nextdns
+
+    - name: Fix LXC resolv.conf and prevent Proxmox overwrite
+      copy:
+        content: "nameserver 127.0.0.1\n"
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Create Proxmox resolv.conf ignore marker
+      copy:
+        content: ""
+        dest: /etc/.pve-ignore.resolv.conf
+        mode: "0644"
+        force: no
+
+    # Use systemctl directly — the Ansible systemd module fails to enumerate
+    # services inside Proxmox LXC containers.
+    - name: Enable and start services
+      command: systemctl enable --now {{ item }}
+      register: service_result
+      changed_when: "'Created symlink' in service_result.stderr"
+      loop:
+        - nextdns
+        - dnsmasq
+
+    - name: Verify DNS resolution works
+      command: dig +short +time=5 google.com @127.0.0.1
+      register: dns_check
+      changed_when: false
+      failed_when: dns_check.rc != 0
+
+  handlers:
+    - name: Reload systemd
+      command: systemctl daemon-reload
+      changed_when: false
+
+    - name: Restart nextdns
+      command: systemctl restart nextdns
+
+    - name: Validate dnsmasq configuration
+      command: dnsmasq --test
+      changed_when: false
+      listen: Restart dnsmasq
+
+    - name: Restart dnsmasq
+      command: systemctl restart dnsmasq
