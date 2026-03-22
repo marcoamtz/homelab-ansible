@@ -45,7 +45,9 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 
 ## Setup
 
-1. Copy the example files and fill in your values:
+1. Create and configure your Proxmox LXC containers following the [LXC setup guide](docs/proxmox-lxc-setup.md).
+
+2. Copy the example files and fill in your values:
 
    ```bash
    cp inventory.ini.example inventory.ini
@@ -54,9 +56,9 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    cp group_vars/proxmox_hosts.yml.example group_vars/proxmox_hosts.yml
    ```
 
-2. Edit `inventory.ini` with your server IPs and SSH settings.
+3. Edit `inventory.ini` with your server IPs and SSH settings.
 
-3. Edit `group_vars/dns_servers.yml` with your network configuration:
+4. Edit `group_vars/dns_servers.yml` with your network configuration:
    - `nextdns_id` — your NextDNS profile ID
    - `network_interface` — LXC network interface (e.g. `eth0`)
    - `domain` — local domain name (e.g. `home.arpa`)
@@ -68,12 +70,12 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `bypass_devices` — devices that skip NextDNS filtering
    - `static_leases` — fixed DHCP reservations
 
-4. Edit `group_vars/tailscale_nodes.yml` with your Tailscale settings:
+5. Edit `group_vars/tailscale_nodes.yml` with your Tailscale settings:
    - `tailscale_auth_key` — auth key from the Tailscale admin console
    - `ula_address` — static ULA address for the container (assigned alongside SLAAC)
    - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
 
-5. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
+6. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
    - `dns_ctid`, `tailscale_ctid` — container IDs
    - `local_ipv4_subnet` — your LAN subnet
    - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale container's ipfilter (must cover SLAAC addresses)
