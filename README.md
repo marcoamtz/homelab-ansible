@@ -39,7 +39,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 
 - Proxmox LXC containers running Debian/Ubuntu with systemd
 - Ansible installed on your control machine
-- SSH access to the containers (key-based)
+- SSH access to the containers and Proxmox host (key-based)
 - A [NextDNS](https://nextdns.io) account and profile ID (for DNS playbook)
 - A [Tailscale](https://login.tailscale.com/admin/settings/keys) auth key (for Tailscale playbook)
 
@@ -98,26 +98,22 @@ ansible-playbook deploy-proxmox-firewall.yml --check
 
 ## LXC Notes
 
-Both playbooks include workarounds for Proxmox LXC containers:
+The container playbooks include workarounds for Proxmox LXC containers:
 
 - Uses `systemctl` commands directly instead of the Ansible `systemd` module (which fails to enumerate services inside LXC)
 - Pins `/etc/resolv.conf` to `127.0.0.1` and creates `.pve-ignore.resolv.conf` to prevent Proxmox from overwriting it (DNS playbook)
-- Force-applies `sysctl` settings on every run since LXC hosts can reset forwarding on container restart (Tailscale playbook)
+- Force-applies `sysctl` settings on every run and installs a `@reboot` cron job since LXC hosts can reset forwarding on container restart (Tailscale playbook)
 
 ## Project Structure
 
 ```
-ansible.cfg                        # Ansible config (default inventory)
-deploy-dns.yml                     # DNS playbook
-deploy-tailscale.yml               # Tailscale playbook
-deploy-proxmox-firewall.yml        # Proxmox firewall playbook
-inventory.ini.example              # Example inventory
+docs/
+  proxmox-lxc-setup.md            # LXC container creation guide
 group_vars/
   dns_servers.yml.example          # Example DNS variables
-  tailscale_nodes.yml.example      # Example Tailscale variables
   proxmox_hosts.yml.example        # Example Proxmox variables
+  tailscale_nodes.yml.example      # Example Tailscale variables
 templates/
-  nextdns.conf.j2                  # NextDNS CLI config
   dnsmasq.d/
     01-base.conf.j2                # Core dnsmasq settings
     02-dhcp.conf.j2                # DHCP, static leases, DNS bypass
@@ -126,4 +122,10 @@ templates/
     cluster.fw.j2                  # Datacenter firewall and security groups
     ct-dns.fw.j2                   # DNS container firewall
     ct-tailscale.fw.j2             # Tailscale container firewall + ipfilter
+  nextdns.conf.j2                  # NextDNS CLI config
+ansible.cfg                        # Ansible config (default inventory)
+deploy-dns.yml                     # DNS playbook
+deploy-proxmox-firewall.yml        # Proxmox firewall playbook
+deploy-tailscale.yml               # Tailscale playbook
+inventory.ini.example              # Example inventory
 ```
