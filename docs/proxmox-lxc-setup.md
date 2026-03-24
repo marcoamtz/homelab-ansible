@@ -207,7 +207,13 @@ The root disk (16G) holds Docker images, container configs, and Dockge data. Lar
 - **`mp1:` — Synology NFS (media)** — Bind mount from the Proxmox host's NFS mount for the Emby media library.
 - **`mp2:` — Synology NFS (complete)** — Bind mount from the Proxmox host's NFS mount for qBittorrent completed downloads.
 
-Add these to `/etc/pve/lxc/<CTID>.conf` while the container is **stopped**:
+Create the ZFS dataset for incomplete downloads on the Proxmox host:
+
+```bash
+zfs create tank/subvol-<CTID>-incomplete
+```
+
+Then add these to `/etc/pve/lxc/<CTID>.conf` while the container is **stopped**:
 
 ```
 mp0: tank:subvol-<CTID>-incomplete,mp=/mnt/incomplete
