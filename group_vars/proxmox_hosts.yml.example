@@ -2,9 +2,18 @@
 # Container IDs
 dns_ctid: 100
 tailscale_ctid: 101
+docker_ctid: 102
 
 # Local IPv4 subnet for firewall ipsets
 local_ipv4_subnet: "192.168.1.0/24"
+
+# Docker container service ports (must match docker_hosts group_vars)
+dockge_port: 5001
+emby_port_http: 8096
+emby_port_https: 8920
+speedtest_port: 8088
+qbittorrent_port_webui: 8080
+qbittorrent_port_torrent: 6881
 
 # IPv6 prefixes allowed in the Tailscale container's ipfilter.
 # Must cover addresses the container receives via SLAAC.

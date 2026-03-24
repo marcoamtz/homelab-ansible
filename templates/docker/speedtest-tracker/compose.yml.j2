@@ -1,0 +1,14 @@
+services:
+  speedtest-tracker:
+    image: lscr.io/linuxserver/speedtest-tracker:latest
+    restart: unless-stopped
+    ports:
+      - "{{ speedtest_port }}:80"
+    volumes:
+      - {{ speedtest_config_dir }}:/config
+    environment:
+      TZ: "{{ docker_timezone }}"
+      PUID: "1000"
+      PGID: "1000"
+      APP_KEY: "{{ speedtest_app_key }}"
+      APP_URL: "http://{{ speedtest_url }}:{{ speedtest_port }}"

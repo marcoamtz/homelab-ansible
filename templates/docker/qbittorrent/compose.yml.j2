@@ -1,0 +1,17 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    restart: unless-stopped
+    ports:
+      - "{{ qbittorrent_port_webui }}:8080"
+      - "{{ qbittorrent_port_torrent }}:6881"
+      - "{{ qbittorrent_port_torrent }}:6881/udp"
+    volumes:
+      - {{ qbittorrent_config_dir }}:/config
+      - {{ qbittorrent_incomplete_dir }}:/downloads/incomplete
+      - {{ qbittorrent_complete_dir }}:/downloads/complete
+    environment:
+      PUID: "{{ qbittorrent_puid }}"
+      PGID: "{{ qbittorrent_pgid }}"
+      TZ: "{{ docker_timezone }}"
+      WEBUI_PORT: "8080"

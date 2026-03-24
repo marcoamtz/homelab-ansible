@@ -36,3 +36,15 @@ IN ACCEPT -source +dc/local_net -p tcp -dport 8006 -log nolog # Allow Proxmox We
 IN ACCEPT -source +dc/tailscale_net -log nolog # Exit Node: Tailscale to WAN
 IN ACCEPT -source +dc/tailscale_net -dest +dc/local_net -log nolog # Subnet Routing: Tailscale to Home
 IN ACCEPT -p udp -dport 41641 -log nolog # Tailscale WireGuard Port
+
+[group docker_services] # Rules for Docker container services
+
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ dockge_port }} -log nolog # Dockge Web UI
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ emby_port_http }} -log nolog # Emby HTTP
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ emby_port_https }} -log nolog # Emby HTTPS
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ speedtest_port }} -log nolog # Speedtest Tracker
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ qbittorrent_port_webui }} -log nolog # qBittorrent WebUI
+IN ACCEPT -p tcp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent TCP (peers)
+IN ACCEPT -p udp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent UDP (peers)
+IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
+IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6

@@ -1,0 +1,16 @@
+services:
+  emby:
+    image: emby/embyserver:latest
+    restart: unless-stopped
+    ports:
+      - "{{ emby_port_http }}:8096"
+      - "{{ emby_port_https }}:8920"
+    volumes:
+      - {{ emby_config_dir }}:/config
+      - {{ emby_media_dir }}:/mnt/media
+    environment:
+      UID: "{{ emby_uid }}"
+      GID: "{{ emby_gid }}"
+      TZ: "{{ docker_timezone }}"
+    devices:
+      - /dev/dri:/dev/dri

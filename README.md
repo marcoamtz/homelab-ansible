@@ -27,11 +27,24 @@ Deploys [Tailscale](https://tailscale.com) as a subnet router and exit node, bri
 - Subnet route and exit node advertising
 - Post-deploy connectivity check
 
+### `deploy-docker.yml` — Docker + Dockge
+
+Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github.com/louislam/dockge) with initial compose stacks for media and download services.
+
+- Docker CE installed via official apt repository
+- Dockge as compose stack management UI
+- Emby media server with Intel Quick Sync hardware transcoding
+- Speedtest Tracker for internet speed monitoring
+- qBittorrent torrent client with split storage (incomplete on NVMe, complete on NFS)
+- Dual-stack IPv4/IPv6 networking with SLAAC for incoming IPv6 peer connections
+- All service ports configurable via group_vars
+- Post-deploy health checks
+
 ### `deploy-proxmox-firewall.yml` — Proxmox Firewall
 
 Deploys firewall configuration to the Proxmox host, managing cluster-wide rules and per-container policies.
 
-- Cluster firewall with security groups (DNS/DHCP, management, Tailscale)
+- Cluster firewall with security groups (DNS/DHCP, management, Tailscale, Docker)
 - IPSet-based network aliases (local network, Tailscale network)
 - Container-level firewall configs with IPv6 ipfilter for SLAAC
 
@@ -54,6 +67,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    cp group_vars/dns_servers.yml.example group_vars/dns_servers.yml
    cp group_vars/tailscale_nodes.yml.example group_vars/tailscale_nodes.yml
    cp group_vars/proxmox_hosts.yml.example group_vars/proxmox_hosts.yml
+   cp group_vars/docker_hosts.yml.example group_vars/docker_hosts.yml
    ```
 
 3. Edit `inventory.ini` with your server IPs and SSH settings.
@@ -75,16 +89,34 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `ula_address` — static ULA address for the container (assigned alongside SLAAC)
    - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
 
-6. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
-   - `dns_ctid`, `tailscale_ctid` — container IDs
+6. Edit `group_vars/docker_hosts.yml` with your Docker settings:
+   - `dockge_port` — Dockge web UI port (default: 5001)
+   - `emby_port_http`, `emby_port_https` — Emby ports (default: 8096, 8920)
+   - `emby_uid`, `emby_gid` — file ownership for Emby media access
+   - `speedtest_port` — Speedtest Tracker port (default: 8088)
+   - `speedtest_url` — IP or hostname for Speedtest Tracker's APP_URL
+   - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/))
+   - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
+   - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
+   - `nas_media_path` — bind mount path for Emby media library (Synology NFS)
+   - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
+   - `qbittorrent_incomplete_dir` — path for active downloads (ZFS bind mount)
+   - `docker_timezone` — timezone for all containers
+   - `docker_ipv6_cidr` — ULA subnet for Docker's default bridge network
+   - `docker_ipv6_pool` — ULA pool for Docker Compose networks
+
+7. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
+   - `dns_ctid`, `tailscale_ctid`, `docker_ctid` — container IDs
    - `local_ipv4_subnet` — your LAN subnet
-   - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale container's ipfilter (must cover SLAAC addresses)
+   - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale and Docker container ipfilters (must cover SLAAC addresses)
+   - Docker service ports (must match `docker_hosts` group_vars for firewall rules)
 
 ## Deploy
 
 ```bash
 ansible-playbook deploy-dns.yml
 ansible-playbook deploy-tailscale.yml
+ansible-playbook deploy-docker.yml
 ansible-playbook deploy-proxmox-firewall.yml
 ```
 
@@ -93,6 +125,7 @@ Dry run (no changes):
 ```bash
 ansible-playbook deploy-dns.yml --check
 ansible-playbook deploy-tailscale.yml --check
+ansible-playbook deploy-docker.yml --check
 ansible-playbook deploy-proxmox-firewall.yml --check
 ```
 
@@ -111,6 +144,7 @@ docs/
   proxmox-lxc-setup.md            # LXC container creation guide
 group_vars/
   dns_servers.yml.example          # Example DNS variables
+  docker_hosts.yml.example         # Example Docker variables
   proxmox_hosts.yml.example        # Example Proxmox variables
   tailscale_nodes.yml.example      # Example Tailscale variables
 templates/
@@ -118,13 +152,21 @@ templates/
     01-base.conf.j2                # Core dnsmasq settings
     02-dhcp.conf.j2                # DHCP, static leases, DNS bypass
     06-rfc6761.conf.j2             # RFC 6761 special domains
+  docker/
+    daemon.json.j2                 # Docker daemon config (IPv6, ip6tables)
+    dockge/compose.yml.j2          # Dockge compose stack
+    emby/compose.yml.j2            # Emby media server
+    speedtest-tracker/compose.yml.j2  # Speedtest Tracker
+    qbittorrent/compose.yml.j2     # qBittorrent torrent client
   proxmox/firewall/
     cluster.fw.j2                  # Datacenter firewall and security groups
     ct-dns.fw.j2                   # DNS container firewall
+    ct-docker.fw.j2                # Docker container firewall
     ct-tailscale.fw.j2             # Tailscale container firewall + ipfilter
   nextdns.conf.j2                  # NextDNS CLI config
 ansible.cfg                        # Ansible config (default inventory)
 deploy-dns.yml                     # DNS playbook
+deploy-docker.yml                  # Docker + Dockge playbook
 deploy-proxmox-firewall.yml        # Proxmox firewall playbook
 deploy-tailscale.yml               # Tailscale playbook
 inventory.ini.example              # Example inventory

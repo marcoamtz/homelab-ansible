@@ -4,6 +4,9 @@ dns-gateway ansible_host=192.168.1.210
 [tailscale_nodes]
 tailscale-bridge ansible_host=192.168.1.211
 
+[docker_hosts]
+docker-server ansible_host=192.168.1.212
+
 [proxmox_hosts]
 proxmox ansible_host=192.168.1.200
 

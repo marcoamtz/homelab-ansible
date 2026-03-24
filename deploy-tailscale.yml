@@ -10,10 +10,16 @@
         state: present
         update_cache: yes
 
-    - name: Fix locales
-      command: locale-gen en_US.UTF-8
-      args:
-        creates: /usr/lib/locale/en_US.utf8
+    - name: Enable en_US.UTF-8 locale
+      lineinfile:
+        path: /etc/locale.gen
+        regexp: '^# en_US.UTF-8 UTF-8'
+        line: 'en_US.UTF-8 UTF-8'
+      register: locale_gen_result
+
+    - name: Generate locales
+      command: locale-gen
+      when: locale_gen_result.changed
 
     # WARNING: Pipes a remote script to shell as root. This is Tailscale's official
     # install method, but carries inherent supply-chain risk.
@@ -55,7 +61,8 @@
       changed_when: ula_result.rc == 0
       failed_when: >
         ula_result.rc != 0 and
-        'RTNETLINK answers: File exists' not in ula_result.stderr
+        'RTNETLINK answers: File exists' not in ula_result.stderr and
+        'address already assigned' not in ula_result.stderr
 
     - name: Authenticate and start Tailscale
       command: >

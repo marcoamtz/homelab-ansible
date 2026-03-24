@@ -1,0 +1,161 @@
+---
+- name: Deploy Docker and Dockge (LXC Optimized)
+  hosts: docker_hosts
+  become: yes
+
+  tasks:
+    - name: Install system requirements
+      apt:
+        name: [ca-certificates, curl, gnupg, locales]
+        state: present
+        update_cache: yes
+
+    - name: Enable en_US.UTF-8 locale
+      lineinfile:
+        path: /etc/locale.gen
+        regexp: '^# en_US.UTF-8 UTF-8'
+        line: 'en_US.UTF-8 UTF-8'
+      notify: Generate locales
+
+    - name: Add Docker GPG key
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+      args:
+        creates: /etc/apt/keyrings/docker.asc
+
+    - name: Add Docker apt repository
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+
+    - name: Install Docker CE
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+        update_cache: yes
+
+    - name: Deploy Docker daemon configuration
+      template:
+        src: docker/daemon.json.j2
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart docker
+
+    # Use systemctl directly — the Ansible systemd module fails to enumerate
+    # services inside Proxmox LXC containers.
+    - name: Enable and start Docker
+      command: systemctl enable --now docker
+      register: service_result
+      changed_when: "'Created symlink' in service_result.stderr"
+
+    - name: Create Dockge directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ dockge_data_dir }}"
+        - "{{ dockge_stacks_dir }}"
+
+    - name: Deploy Dockge compose file
+      template:
+        src: docker/dockge/compose.yml.j2
+        dest: "{{ dockge_data_dir }}/compose.yml"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart dockge
+
+    - name: Start Dockge
+      shell: "docker compose -f {{ dockge_data_dir }}/compose.yml up -d"
+      register: dockge_result
+      changed_when: "'Started' in dockge_result.stderr or 'Creating' in dockge_result.stderr"
+
+    - name: Create stack directories
+      file:
+        path: "{{ dockge_stacks_dir }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - emby
+        - speedtest-tracker
+        - qbittorrent
+
+    - name: Deploy Emby compose file
+      template:
+        src: docker/emby/compose.yml.j2
+        dest: "{{ dockge_stacks_dir }}/emby/compose.yml"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart emby
+
+    - name: Deploy Speedtest Tracker compose file
+      template:
+        src: docker/speedtest-tracker/compose.yml.j2
+        dest: "{{ dockge_stacks_dir }}/speedtest-tracker/compose.yml"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart speedtest-tracker
+
+    - name: Deploy qBittorrent compose file
+      template:
+        src: docker/qbittorrent/compose.yml.j2
+        dest: "{{ dockge_stacks_dir }}/qbittorrent/compose.yml"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart qbittorrent
+
+    - name: Start compose stacks
+      shell: "docker compose -f {{ dockge_stacks_dir }}/{{ item }}/compose.yml up -d"
+      loop:
+        - emby
+        - speedtest-tracker
+        - qbittorrent
+      register: stack_result
+      changed_when: "'Started' in stack_result.stderr or 'Creating' in stack_result.stderr"
+
+    - name: Verify Docker is healthy
+      command: docker info
+      register: docker_check
+      changed_when: false
+      failed_when: docker_check.rc != 0
+
+    - name: Verify Dockge is reachable
+      command: "curl -sf http://localhost:{{ dockge_port }}"
+      register: dockge_check
+      changed_when: false
+      failed_when: dockge_check.rc != 0
+      retries: 3
+      delay: 5
+
+  handlers:
+    - name: Generate locales
+      command: locale-gen
+      changed_when: false
+
+    - name: Reload systemd
+      command: systemctl daemon-reload
+      changed_when: false
+
+    - name: Restart docker
+      command: systemctl restart docker
+
+    - name: Restart dockge
+      shell: "docker compose -f {{ dockge_data_dir }}/compose.yml up -d --force-recreate"
+
+    - name: Restart emby
+      shell: "docker compose -f {{ dockge_stacks_dir }}/emby/compose.yml up -d --force-recreate"
+
+    - name: Restart speedtest-tracker
+      shell: "docker compose -f {{ dockge_stacks_dir }}/speedtest-tracker/compose.yml up -d --force-recreate"
+
+    - name: Restart qbittorrent
+      shell: "docker compose -f {{ dockge_stacks_dir }}/qbittorrent/compose.yml up -d --force-recreate"

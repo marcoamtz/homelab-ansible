@@ -1,5 +1,20 @@
-group_vars/dns_servers.yml
-group_vars/tailscale_nodes.yml
-group_vars/proxmox_hosts.yml
+# Real config files (contain secrets) — only .example versions are committed
+group_vars/*.yml
+!group_vars/*.yml.example
 inventory.ini
+
+# Ansible
 *.retry
+*.vault.yml
+
+# Secrets & keys
+.env
+.env.*
+*.pem
+*.key
+*.crt
+vault.yml
+secrets/
+
+# OS
+.DS_Store
