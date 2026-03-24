@@ -6,7 +6,7 @@
   tasks:
     - name: Install system requirements
       apt:
-        name: [ca-certificates, curl, gnupg, locales]
+        name: [ca-certificates, curl, gnupg, locales, ndisc6]
         state: present
         update_cache: yes
 
@@ -45,6 +45,30 @@
         group: root
         mode: "0644"
       notify: Restart docker
+
+    # Docker with ip6tables enables IPv6 forwarding, which disables SLAAC RA
+    # acceptance. Set accept_ra=2 to accept RAs even with forwarding enabled.
+    - name: Deploy sysctl configuration
+      copy:
+        content: |
+          net.ipv6.conf.all.accept_ra=2
+          net.ipv6.conf.eth0.accept_ra=2
+        dest: /etc/sysctl.conf
+        owner: root
+        group: root
+        mode: "0644"
+
+    # Always force-apply — LXC hosts can reset settings on container restart.
+    - name: Apply sysctl settings
+      command: sysctl -p
+      changed_when: false
+
+    # Ensure settings survive container restarts.
+    - name: Apply sysctl settings on boot
+      cron:
+        name: "sysctl-accept-ra"
+        special_time: reboot
+        job: "/sbin/sysctl -p && /usr/bin/rdisc6 -1 eth0"
 
     # Use systemctl directly — the Ansible systemd module fails to enumerate
     # services inside Proxmox LXC containers.

@@ -6,7 +6,7 @@
   tasks:
     - name: Install system requirements
       apt:
-        name: [curl, gnupg, locales, ca-certificates]
+        name: [curl, gnupg, locales, ca-certificates, ndisc6]
         state: present
         update_cache: yes
 
@@ -36,6 +36,7 @@
           net.ipv4.ip_forward=1
           net.ipv6.conf.all.forwarding=1
           net.ipv6.conf.all.accept_ra=2
+          net.ipv6.conf.eth0.accept_ra=2
         dest: /etc/sysctl.conf
         owner: root
         group: root
@@ -52,7 +53,7 @@
       cron:
         name: "sysctl-forwarding"
         special_time: reboot
-        job: "/sbin/sysctl -p"
+        job: "/sbin/sysctl -p && /usr/bin/rdisc6 -1 eth0"
 
     # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
     - name: Assign static ULA address
