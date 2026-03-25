@@ -25,3 +25,8 @@ dhcp-option=6,{{ dns_server_ip }}
 
 domain={{ domain }}
 local=/{{ domain }}/
+
+# DNS records for devices with static IPs that don't use DHCP
+{% for record in host_records %}
+host-record={{ record.name }}.{{ domain }},{{ record.ip }}
+{% endfor %}

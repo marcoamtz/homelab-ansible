@@ -31,3 +31,8 @@ static_leases:
   - { mac: "AA:BB:CC:DD:EE:10", ip: "192.168.1.2", name: "router" }
   - { mac: "AA:BB:CC:DD:EE:11", ip: "192.168.1.3", name: "switch" }
   - { mac: "AA:BB:CC:DD:EE:12", ip: "192.168.1.5", name: "nas" }
+
+# DNS records for devices with static IPs that don't use DHCP
+host_records:
+  - { ip: "192.168.1.5", name: "nas" }
+  - { ip: "192.168.1.200", name: "proxmox" }
