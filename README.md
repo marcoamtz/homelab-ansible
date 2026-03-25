@@ -83,6 +83,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `tailscale_domain` — your tailnet domain for MagicDNS forwarding
    - `bypass_devices` — devices that skip NextDNS filtering
    - `static_leases` — fixed DHCP reservations
+   - `host_records` — DNS records for devices with static IPs that don't use DHCP
 
 5. Edit `group_vars/tailscale_nodes.yml` with your Tailscale settings:
    - `tailscale_auth_key` — auth key from the Tailscale admin console
@@ -101,6 +102,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `nas_media_path` — bind mount path for Emby media library (Synology NFS)
    - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
    - `qbittorrent_incomplete_dir` — path for active downloads (ZFS bind mount)
+   - `emby_transcode_dir` — path for Emby transcoding temp files (ZFS bind mount)
    - `docker_timezone` — timezone for all containers
    - `docker_ipv6_cidr` — ULA subnet for Docker's default bridge network
    - `docker_ipv6_pool` — ULA pool for Docker Compose networks

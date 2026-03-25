@@ -8,6 +8,7 @@ services:
     volumes:
       - {{ emby_config_dir }}:/config
       - {{ emby_media_dir }}:/mnt/media
+      - {{ emby_transcode_dir }}:/config/transcoding-temp
     environment:
       UID: "{{ emby_uid }}"
       GID: "{{ emby_gid }}"

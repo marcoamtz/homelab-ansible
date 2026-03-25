@@ -16,6 +16,8 @@ emby_port_http: 8096
 emby_port_https: 8920
 emby_config_dir: "/opt/stacks/emby/config"
 emby_media_dir: "{{ nas_media_path }}"
+# Transcoding temp on tank ZFS bind mount (fast NVMe, can be several GB per stream)
+emby_transcode_dir: "/mnt/tank/emby-transcode"
 # UID/GID for file permissions (match your media file ownership)
 emby_uid: "1000"
 emby_gid: "1000"
@@ -34,7 +36,7 @@ qbittorrent_port_webui: 8080
 qbittorrent_port_torrent: 6881
 qbittorrent_config_dir: "/opt/stacks/qbittorrent/config"
 # Incomplete downloads on tank ZFS bind mount (fast NVMe, not limited by root disk)
-qbittorrent_incomplete_dir: "/mnt/incomplete"
+qbittorrent_incomplete_dir: "/mnt/tank/incomplete"
 # Completed downloads on Synology NFS
 qbittorrent_complete_dir: "{{ nas_complete_path }}"
 # PUID/PGID for linuxserver images
