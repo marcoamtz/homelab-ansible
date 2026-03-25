@@ -103,6 +103,9 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
    - `speedtest_url` — IP or hostname for Speedtest Tracker's APP_URL
    - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/))
+   - `speedtest_schedule` — cron schedule for speed tests
+   - `speedtest_servers` — comma-separated Ookla server IDs
+   - `speedtest_mail_*` — SMTP settings for email notifications
    - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
    - `nas_media_path` — bind mount path for Emby media library (Synology NFS)

@@ -126,6 +126,33 @@
         - speedtest-tracker
         - qbittorrent
 
+    - name: Set Emby config directory ownership
+      file:
+        path: "{{ emby_config_dir }}"
+        state: directory
+        owner: "{{ emby_uid }}"
+        group: "{{ emby_gid }}"
+        recurse: yes
+        mode: "0755"
+
+    - name: Set Speedtest Tracker config directory ownership
+      file:
+        path: "{{ speedtest_config_dir }}"
+        state: directory
+        owner: "1000"
+        group: "1000"
+        recurse: yes
+        mode: "0755"
+
+    - name: Set qBittorrent config directory ownership
+      file:
+        path: "{{ qbittorrent_config_dir }}"
+        state: directory
+        owner: "{{ qbittorrent_puid }}"
+        group: "{{ qbittorrent_pgid }}"
+        recurse: yes
+        mode: "0755"
+
     - name: Deploy Emby compose file
       template:
         src: docker/emby/compose.yml.j2

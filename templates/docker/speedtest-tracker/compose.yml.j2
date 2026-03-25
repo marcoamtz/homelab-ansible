@@ -7,8 +7,23 @@ services:
     volumes:
       - {{ speedtest_config_dir }}:/config
     environment:
-      TZ: "{{ docker_timezone }}"
-      PUID: "1000"
-      PGID: "1000"
+      PUID: "{{ speedtest_puid }}"
+      PGID: "{{ speedtest_pgid }}"
+      DB_CONNECTION: sqlite
       APP_KEY: "{{ speedtest_app_key }}"
       APP_URL: "http://{{ speedtest_url }}:{{ speedtest_port }}"
+      APP_NAME: "{{ speedtest_app_name }}"
+      PUBLIC_DASHBOARD: "{{ speedtest_public_dashboard }}"
+      DISPLAY_TIMEZONE: "{{ docker_timezone }}"
+      SPEEDTEST_SCHEDULE: "{{ speedtest_schedule }}"
+      SPEEDTEST_SERVERS: "{{ speedtest_servers }}"
+      PRUNE_RESULTS_OLDER_THAN: "{{ speedtest_prune_days }}"
+      MAIL_MAILER: smtp
+      MAIL_HOST: "{{ speedtest_mail_host }}"
+      MAIL_SCHEME: smtp
+      MAIL_ENCRYPTION: "{{ speedtest_mail_encryption }}"
+      MAIL_PORT: "{{ speedtest_mail_port }}"
+      MAIL_USERNAME: "{{ speedtest_mail_username }}"
+      MAIL_PASSWORD: "{{ speedtest_mail_password }}"
+      MAIL_FROM_ADDRESS: "{{ speedtest_mail_from }}"
+      MAIL_FROM_NAME: "{{ speedtest_app_name }}"

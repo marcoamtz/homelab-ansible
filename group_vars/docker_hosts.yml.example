@@ -23,13 +23,27 @@ emby_uid: "1000"
 emby_gid: "1000"
 
 # === Speedtest Tracker ===
-# Remapped from default 8080 to avoid conflict with qBittorrent
 speedtest_port: 8088
-# IP or hostname for Speedtest Tracker URL (used in APP_URL)
-speedtest_url: "192.168.1.212"
+speedtest_url: "192.168.1.220"
 speedtest_config_dir: "/opt/stacks/speedtest-tracker/config"
+speedtest_puid: "1000"
+speedtest_pgid: "1000"
 # Generate at https://speedtest-tracker.dev/
 speedtest_app_key: "base64:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+speedtest_app_name: "Internet Tracker"
+speedtest_public_dashboard: "true"
+# Cron schedule for speed tests (default: every hour at minute 6)
+speedtest_schedule: "6 */1 * * *"
+# Comma-separated Ookla server IDs (find yours at https://www.speedtest.net/speedtest-servers.php)
+speedtest_servers: ""
+speedtest_prune_days: "90"
+# Email notifications (optional)
+speedtest_mail_host: "smtp.example.com"
+speedtest_mail_encryption: "ssl"
+speedtest_mail_port: "465"
+speedtest_mail_username: "user@example.com"
+speedtest_mail_password: "XXXXXXXXXXXXXXXX"
+speedtest_mail_from: "user@example.com"
 
 # === qBittorrent ===
 qbittorrent_port_webui: 8080
