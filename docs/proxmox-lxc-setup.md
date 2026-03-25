@@ -236,6 +236,8 @@ lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
 
 Restart the container after applying.
 
+The GPU devices also need world-readable permissions on the Proxmox host — unprivileged LXC UID mapping makes the render group inaccessible inside the container. This is handled by the `deploy-proxmox-host.yml` playbook, which installs a udev rule to persist the permissions across reboots.
+
 ---
 
 ## Firewall

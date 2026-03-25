@@ -77,14 +77,21 @@
       register: service_result
       changed_when: "'Created symlink' in service_result.stderr"
 
-    - name: Create tank scratch directories
+    - name: Create qBittorrent incomplete directory
       file:
-        path: "{{ item }}"
+        path: "{{ qbittorrent_incomplete_dir }}"
         state: directory
+        owner: "{{ qbittorrent_puid }}"
+        group: "{{ qbittorrent_pgid }}"
         mode: "0755"
-      loop:
-        - "{{ qbittorrent_incomplete_dir }}"
-        - "{{ emby_transcode_dir }}"
+
+    - name: Create Emby transcode temp directory
+      file:
+        path: "{{ emby_transcode_dir }}"
+        state: directory
+        owner: "{{ emby_uid }}"
+        group: "{{ emby_gid }}"
+        mode: "0755"
 
     - name: Create Dockge directories
       file:

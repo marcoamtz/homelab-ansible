@@ -40,6 +40,12 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 - All service ports configurable via group_vars
 - Post-deploy health checks
 
+### `deploy-proxmox-host.yml` — Proxmox Host
+
+Deploys host-level configuration to the Proxmox server.
+
+- GPU device permissions for unprivileged LXC passthrough (udev rule)
+
 ### `deploy-proxmox-firewall.yml` — Proxmox Firewall
 
 Deploys firewall configuration to the Proxmox host, managing cluster-wide rules and per-container policies.
@@ -116,6 +122,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 ## Deploy
 
 ```bash
+ansible-playbook deploy-proxmox-host.yml
 ansible-playbook deploy-dns.yml
 ansible-playbook deploy-tailscale.yml
 ansible-playbook deploy-docker.yml
@@ -125,6 +132,7 @@ ansible-playbook deploy-proxmox-firewall.yml
 Dry run (no changes):
 
 ```bash
+ansible-playbook deploy-proxmox-host.yml --check
 ansible-playbook deploy-dns.yml --check
 ansible-playbook deploy-tailscale.yml --check
 ansible-playbook deploy-docker.yml --check
@@ -170,6 +178,7 @@ ansible.cfg                        # Ansible config (default inventory)
 deploy-dns.yml                     # DNS playbook
 deploy-docker.yml                  # Docker + Dockge playbook
 deploy-proxmox-firewall.yml        # Proxmox firewall playbook
+deploy-proxmox-host.yml            # Proxmox host config (GPU passthrough)
 deploy-tailscale.yml               # Tailscale playbook
 inventory.ini.example              # Example inventory
 ```

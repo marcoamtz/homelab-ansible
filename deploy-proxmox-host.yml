@@ -1,0 +1,30 @@
+---
+- name: Deploy Proxmox Host Configuration
+  hosts: proxmox_hosts
+  become: yes
+
+  tasks:
+    # GPU passthrough for unprivileged LXC containers requires world-readable
+    # /dev/dri devices. Without this, the UID mapping makes the render device
+    # inaccessible inside the container.
+    - name: Deploy GPU passthrough udev rule
+      copy:
+        content: 'SUBSYSTEM=="drm", MODE="0666"'
+        dest: /etc/udev/rules.d/99-gpu-passthrough.rules
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload udev rules
+
+    - name: Set GPU device permissions
+      file:
+        path: "{{ item }}"
+        mode: "0666"
+      loop:
+        - /dev/dri/renderD128
+        - /dev/dri/card0
+
+  handlers:
+    - name: Reload udev rules
+      command: udevadm control --reload-rules
+      changed_when: false
