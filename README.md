@@ -132,6 +132,12 @@ ansible-playbook deploy-docker.yml
 ansible-playbook deploy-proxmox-firewall.yml
 ```
 
+Update all LXC container packages:
+
+```bash
+ansible-playbook update-all.yml
+```
+
 Dry run (no changes):
 
 ```bash
@@ -183,5 +189,6 @@ deploy-docker.yml                  # Docker + Dockge playbook
 deploy-proxmox-firewall.yml        # Proxmox firewall playbook
 deploy-proxmox-host.yml            # Proxmox host config (GPU passthrough)
 deploy-tailscale.yml               # Tailscale playbook
+update-all.yml                     # Update packages on all LXC containers
 inventory.ini.example              # Example inventory
 ```
