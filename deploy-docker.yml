@@ -70,6 +70,14 @@
         special_time: reboot
         job: "/sbin/sysctl -p && /usr/bin/rdisc6 -1 eth0"
 
+    - name: Monthly Docker image cleanup
+      cron:
+        name: "docker-image-prune"
+        day: "1"
+        hour: "3"
+        minute: "0"
+        job: "docker image prune -af --filter 'until=720h' > /dev/null 2>&1"
+
     # Use systemctl directly — the Ansible systemd module fails to enumerate
     # services inside Proxmox LXC containers.
     - name: Enable and start Docker
