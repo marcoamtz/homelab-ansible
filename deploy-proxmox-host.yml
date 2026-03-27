@@ -24,6 +24,15 @@
         - /dev/dri/renderD128
         - /dev/dri/card0
 
+    - name: Enable weekly TRIM for OS drive
+      command: systemctl enable --now fstrim.timer
+      register: fstrim_result
+      changed_when: "'Created symlink' in fstrim_result.stderr"
+
+    - name: Enable ZFS autotrim on tank pool
+      command: zpool set autotrim=on tank
+      changed_when: false
+
   handlers:
     - name: Reload udev rules
       command: udevadm control --reload-rules

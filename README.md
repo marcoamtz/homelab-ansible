@@ -37,6 +37,7 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 - Speedtest Tracker for internet speed monitoring
 - qBittorrent torrent client with split storage (incomplete on NVMe, complete on NFS)
 - Dual-stack IPv4/IPv6 networking with SLAAC for incoming IPv6 peer connections
+- Monthly cron to prune unused Docker images
 - All service ports configurable via group_vars
 - Post-deploy health checks
 
@@ -45,6 +46,8 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 Deploys host-level configuration to the Proxmox server.
 
 - GPU device permissions for unprivileged LXC passthrough (udev rule)
+- Weekly TRIM for the OS drive (`fstrim.timer`)
+- ZFS autotrim for the tank pool
 
 ### `deploy-proxmox-firewall.yml` — Proxmox Firewall
 
@@ -187,7 +190,7 @@ ansible.cfg                        # Ansible config (default inventory)
 deploy-dns.yml                     # DNS playbook
 deploy-docker.yml                  # Docker + Dockge playbook
 deploy-proxmox-firewall.yml        # Proxmox firewall playbook
-deploy-proxmox-host.yml            # Proxmox host config (GPU passthrough)
+deploy-proxmox-host.yml            # Proxmox host config (GPU passthrough, TRIM)
 deploy-tailscale.yml               # Tailscale playbook
 update-all.yml                     # Update packages on all LXC containers
 inventory.ini.example              # Example inventory
