@@ -1,0 +1,20 @@
+#!/bin/bash
+# Alert when the ISP router resets IPv6 DNS to "DNS agent" via TR-069.
+# When correctly configured (static DNS), the router's RA has no RDNSS field.
+# When reset, the RA advertises fe80::1 as the DNS server.
+
+LOCK_FILE="/tmp/ipv6-dns-alert-sent"
+
+ra_output=$(/usr/bin/rdisc6 -1 {{ network_interface }} 2>/dev/null)
+
+if echo "$ra_output" | grep -q "Recursive DNS server"; then
+    # RDNSS present — ISP reset DNS to "DNS agent"
+    [ -f "$LOCK_FILE" ] && exit 0
+
+    printf "Subject: [HOMELAB] ISP reset IPv6 DNS on router\nFrom: {{ dns_alert_mail_from }}\nTo: {{ dns_alert_mail_to }}\n\nThe router is advertising a DNS server via Router Advertisement RDNSS.\nThis means the ISP reset the IPv6 DNS source from \"Static configuration\" back to \"DNS agent\".\n\nRouter RA output:\n%s\n\nFix: Log into the router and set IPv6 DNS source back to \"Static configuration\" pointing to {{ dns_server_ipv6 }}.\n\nTimestamp: $(date -Iseconds)\nHost: $(hostname)\n" "$ra_output" | /usr/bin/msmtp {{ dns_alert_mail_to }}
+
+    touch "$LOCK_FILE"
+else
+    # No RDNSS — router is correctly configured
+    rm -f "$LOCK_FILE"
+fi

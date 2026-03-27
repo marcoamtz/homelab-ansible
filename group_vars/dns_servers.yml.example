@@ -32,6 +32,14 @@ static_leases:
   - { mac: "AA:BB:CC:DD:EE:11", ip: "192.168.1.3", name: "switch" }
   - { mac: "AA:BB:CC:DD:EE:12", ip: "192.168.1.5", name: "nas" }
 
+# === IPv6 DNS Reset Notification ===
+dns_alert_mail_to: "you@example.com"
+dns_alert_mail_from: "you@example.com"
+dns_alert_mail_host: "smtp.gmail.com"
+dns_alert_mail_port: "465"
+dns_alert_mail_username: "you@example.com"
+dns_alert_mail_password: "your-app-password"
+
 # DNS records for devices with static IPs that don't use DHCP
 host_records:
   - { ip: "192.168.1.5", name: "nas" }

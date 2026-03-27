@@ -15,6 +15,7 @@ Deploys [NextDNS CLI](https://github.com/nextdns/nextdns) and [dnsmasq](https://
 - Tailscale MagicDNS forwarding
 - Dnsmasq config validation before restart
 - Stale config cleanup (removed local configs are removed from the server)
+- IPv6 DNS reset detection with email alerts (ISP TR-069 monitoring)
 - Post-deploy DNS smoke test
 
 ### `deploy-tailscale.yml` — Tailscale Subnet Router
@@ -93,6 +94,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `bypass_devices` — devices that skip NextDNS filtering
    - `static_leases` — fixed DHCP reservations
    - `host_records` — DNS records for devices with static IPs that don't use DHCP
+   - `dns_alert_mail_*` — SMTP settings for IPv6 DNS reset email alerts
 
 5. Edit `group_vars/tailscale_nodes.yml` with your Tailscale settings:
    - `tailscale_auth_key` — auth key from the Tailscale admin console
@@ -185,6 +187,8 @@ templates/
     ct-dns.fw.j2                   # DNS container firewall
     ct-docker.fw.j2                # Docker container firewall
     ct-tailscale.fw.j2             # Tailscale container firewall + ipfilter
+  check-ipv6-dns.sh.j2             # IPv6 DNS reset detection script
+  msmtprc.j2                       # SMTP client config for email alerts
   nextdns.conf.j2                  # NextDNS CLI config
 ansible.cfg                        # Ansible config (default inventory)
 deploy-dns.yml                     # DNS playbook

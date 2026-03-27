@@ -1,0 +1,9 @@
+account default
+host {{ dns_alert_mail_host }}
+port {{ dns_alert_mail_port }}
+from {{ dns_alert_mail_from }}
+auth on
+user {{ dns_alert_mail_username }}
+password {{ dns_alert_mail_password }}
+tls on
+tls_starttls off

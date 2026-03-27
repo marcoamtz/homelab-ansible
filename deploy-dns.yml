@@ -98,6 +98,34 @@
         - nextdns
         - dnsmasq
 
+    # --- IPv6 DNS reset monitoring ---
+    - name: Install monitoring dependencies
+      apt:
+        name: [ndisc6, msmtp]
+        state: present
+
+    - name: Deploy msmtp configuration
+      template:
+        src: msmtprc.j2
+        dest: /etc/msmtprc
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Deploy IPv6 DNS check script
+      template:
+        src: check-ipv6-dns.sh.j2
+        dest: /usr/local/bin/check-ipv6-dns.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Schedule IPv6 DNS check every 5 minutes
+      cron:
+        name: "check-ipv6-dns"
+        minute: "*/5"
+        job: "/usr/local/bin/check-ipv6-dns.sh"
+
     - name: Verify DNS resolution works
       command: dig +short +time=5 google.com @127.0.0.1
       register: dns_check
