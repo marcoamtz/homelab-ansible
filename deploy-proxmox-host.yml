@@ -29,9 +29,10 @@
       register: fstrim_result
       changed_when: "'Created symlink' in fstrim_result.stderr"
 
-    - name: Enable ZFS autotrim on tank pool
-      command: zpool set autotrim=on tank
-      changed_when: false
+    - name: Enable weekly TRIM for ZFS tank pool
+      command: systemctl enable --now zfs-trim-weekly@tank.timer
+      register: zfs_trim_result
+      changed_when: "'Created symlink' in zfs_trim_result.stderr"
 
   handlers:
     - name: Reload udev rules

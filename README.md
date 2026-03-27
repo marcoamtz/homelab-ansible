@@ -47,7 +47,7 @@ Deploys host-level configuration to the Proxmox server.
 
 - GPU device permissions for unprivileged LXC passthrough (udev rule)
 - Weekly TRIM for the OS drive (`fstrim.timer`)
-- ZFS autotrim for the tank pool
+- Weekly TRIM for the ZFS tank pool (`zfs-trim-weekly@tank.timer`)
 
 ### `deploy-proxmox-firewall.yml` — Proxmox Firewall
 
