@@ -41,11 +41,7 @@
         owner: root
         group: root
         mode: "0644"
-
-    # Always force-apply — LXC hosts can reset forwarding on container restart.
-    - name: Apply IP forwarding
-      command: sysctl -p
-      changed_when: false
+      notify: Apply sysctl settings
 
     # Ensure forwarding survives container restarts — LXC does not reliably
     # run sysctl.conf at boot.
@@ -59,11 +55,20 @@
     - name: Assign static ULA address
       command: ip -6 addr add {{ ula_address }} dev eth0
       register: ula_result
-      changed_when: ula_result.rc == 0
+      changed_when: >
+        ula_result.rc == 0 and
+        'RTNETLINK answers: File exists' not in ula_result.stderr and
+        'address already assigned' not in ula_result.stderr
       failed_when: >
         ula_result.rc != 0 and
         'RTNETLINK answers: File exists' not in ula_result.stderr and
         'address already assigned' not in ula_result.stderr
+
+    - name: Check Tailscale status
+      command: tailscale status
+      register: ts_status
+      changed_when: false
+      failed_when: false
 
     - name: Authenticate and start Tailscale
       command: >
@@ -71,7 +76,7 @@
         --authkey={{ tailscale_auth_key }}
         {{ tailscale_args }}
       register: ts_up
-      changed_when: "'Success' in ts_up.stdout"
+      changed_when: ts_status.rc != 0
       no_log: true
 
     # Use systemctl directly — the Ansible systemd module fails to enumerate
@@ -86,3 +91,8 @@
       register: ts_ip
       changed_when: false
       failed_when: ts_ip.rc != 0
+
+  handlers:
+    - name: Apply sysctl settings
+      command: sysctl -p
+      changed_when: false

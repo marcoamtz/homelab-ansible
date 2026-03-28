@@ -57,11 +57,7 @@
         owner: root
         group: root
         mode: "0644"
-
-    # Always force-apply — LXC hosts can reset settings on container restart.
-    - name: Apply sysctl settings
-      command: sysctl -p
-      changed_when: false
+      notify: Apply sysctl settings
 
     # Ensure settings survive container restarts.
     - name: Apply sysctl settings on boot
@@ -122,7 +118,7 @@
     - name: Start Dockge
       shell: "docker compose -f {{ dockge_data_dir }}/compose.yml up -d"
       register: dockge_result
-      changed_when: "'Started' in dockge_result.stderr or 'Creating' in dockge_result.stderr"
+      changed_when: "dockge_result.stderr is regex('Started|Creating|Recreate')"
 
     - name: Create stack directories
       file:
@@ -195,7 +191,7 @@
         - speedtest-tracker
         - qbittorrent
       register: stack_result
-      changed_when: "'Started' in stack_result.stderr or 'Creating' in stack_result.stderr"
+      changed_when: "stack_result.stderr is regex('Started|Creating|Recreate')"
 
     - name: Verify Docker is healthy
       command: docker info
@@ -212,6 +208,10 @@
       delay: 5
 
   handlers:
+    - name: Apply sysctl settings
+      command: sysctl -p
+      changed_when: false
+
     - name: Generate locales
       command: locale-gen
       changed_when: false
