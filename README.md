@@ -78,6 +78,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    cp group_vars/tailscale_nodes.yml.example group_vars/tailscale_nodes.yml
    cp group_vars/proxmox_hosts.yml.example group_vars/proxmox_hosts.yml
    cp group_vars/docker_hosts.yml.example group_vars/docker_hosts.yml
+   cp group_vars/all.yml.example group_vars/all.yml
    ```
 
 3. Edit `inventory.ini` with your server IPs and SSH settings.
@@ -101,17 +102,19 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `ula_address` — static ULA address for the container (assigned alongside SLAAC)
    - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
 
-6. Edit `group_vars/docker_hosts.yml` with your Docker settings:
+6. Edit `group_vars/all.yml` with shared service ports (used by both Docker and Proxmox firewall):
    - `dockge_port` — Dockge web UI port (default: 5001)
    - `emby_port_http`, `emby_port_https` — Emby ports (default: 8096, 8920)
-   - `emby_uid`, `emby_gid` — file ownership for Emby media access
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
+   - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
+
+7. Edit `group_vars/docker_hosts.yml` with your Docker settings:
+   - `emby_uid`, `emby_gid` — file ownership for Emby media access
    - `speedtest_url` — IP or hostname for Speedtest Tracker's APP_URL
    - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/))
    - `speedtest_schedule` — cron schedule for speed tests
    - `speedtest_servers` — comma-separated Ookla server IDs
    - `speedtest_mail_*` — SMTP settings for email notifications
-   - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
    - `nas_media_path` — bind mount path for Emby media library (Synology NFS)
    - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
@@ -121,11 +124,10 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `docker_ipv6_cidr` — ULA subnet for Docker's default bridge network
    - `docker_ipv6_pool` — ULA pool for Docker Compose networks
 
-7. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
+8. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
    - `dns_ctid`, `tailscale_ctid`, `docker_ctid` — container IDs
    - `local_ipv4_subnet` — your LAN subnet
    - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale and Docker container ipfilters (must cover SLAAC addresses)
-   - Docker service ports (must match `docker_hosts` group_vars for firewall rules)
 
 ## Deploy
 
@@ -159,7 +161,7 @@ The container playbooks include workarounds for Proxmox LXC containers:
 
 - Uses `systemctl` commands directly instead of the Ansible `systemd` module (which fails to enumerate services inside LXC)
 - Pins `/etc/resolv.conf` to `127.0.0.1` and creates `.pve-ignore.resolv.conf` to prevent Proxmox from overwriting it (DNS playbook)
-- Force-applies `sysctl` settings on every run and installs a `@reboot` cron job since LXC hosts can reset forwarding on container restart (Tailscale playbook)
+- Applies `sysctl` settings via handler when config changes, plus a `@reboot` cron job since LXC hosts can reset forwarding on container restart (Tailscale and Docker playbooks)
 
 ## Project Structure
 
@@ -167,6 +169,7 @@ The container playbooks include workarounds for Proxmox LXC containers:
 docs/
   proxmox-lxc-setup.md            # LXC container creation guide
 group_vars/
+  all.yml.example                  # Shared service ports (Docker + firewall)
   dns_servers.yml.example          # Example DNS variables
   docker_hosts.yml.example         # Example Docker variables
   proxmox_hosts.yml.example        # Example Proxmox variables

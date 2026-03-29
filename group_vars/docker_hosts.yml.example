@@ -8,12 +8,7 @@ dockge_stacks_dir: "/opt/stacks"
 nas_media_path: "/mnt/nas/media"
 nas_complete_path: "/mnt/nas/complete"
 
-# === Dockge ===
-dockge_port: 5001
-
 # === Emby ===
-emby_port_http: 8096
-emby_port_https: 8920
 emby_config_dir: "/opt/stacks/emby/config"
 emby_media_dir: "{{ nas_media_path }}"
 # Transcoding temp on tank ZFS bind mount (fast NVMe, can be several GB per stream)
@@ -23,7 +18,6 @@ emby_uid: "1000"
 emby_gid: "1000"
 
 # === Speedtest Tracker ===
-speedtest_port: 8088
 speedtest_url: "192.168.1.220"
 speedtest_config_dir: "/opt/stacks/speedtest-tracker/config"
 speedtest_puid: "1000"
@@ -46,8 +40,6 @@ speedtest_mail_password: "XXXXXXXXXXXXXXXX"
 speedtest_mail_from: "user@example.com"
 
 # === qBittorrent ===
-qbittorrent_port_webui: 8080
-qbittorrent_port_torrent: 6881
 qbittorrent_config_dir: "/opt/stacks/qbittorrent/config"
 # Incomplete downloads on tank ZFS bind mount (fast NVMe, not limited by root disk)
 qbittorrent_incomplete_dir: "/mnt/tank/incomplete"

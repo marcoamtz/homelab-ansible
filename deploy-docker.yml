@@ -4,6 +4,15 @@
   become: yes
 
   tasks:
+    - name: Verify NFS mounts are available
+      stat:
+        path: "{{ item }}"
+      register: nfs_check
+      failed_when: not nfs_check.stat.exists
+      loop:
+        - "{{ nas_media_path }}"
+        - "{{ nas_complete_path }}"
+
     - name: Install system requirements
       apt:
         name: [ca-certificates, curl, gnupg, locales, ndisc6]
@@ -143,8 +152,8 @@
       file:
         path: "{{ speedtest_config_dir }}"
         state: directory
-        owner: "1000"
-        group: "1000"
+        owner: "{{ speedtest_puid }}"
+        group: "{{ speedtest_pgid }}"
         recurse: yes
         mode: "0755"
 
