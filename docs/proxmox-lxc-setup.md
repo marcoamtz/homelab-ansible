@@ -167,7 +167,7 @@ Create an unprivileged Debian LXC container with the following settings:
 |---------|-------|
 | OS | Debian |
 | Arch | amd64 |
-| Cores | 4 |
+| Cores | 6 |
 | Memory | 8192 MB |
 | Swap | 2048 MB |
 | Storage | `tank` (ZFS) |
