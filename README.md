@@ -63,6 +63,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 - Proxmox LXC containers running Debian/Ubuntu with systemd
 - Ansible installed on your control machine
 - SSH access to the containers and Proxmox host (key-based)
+- Vault password file at `~/.ansible/vault_password` (see [Vault](#vault-encrypted-secrets) section)
 - A [NextDNS](https://nextdns.io) account and profile ID (for DNS playbook)
 - A [Tailscale](https://login.tailscale.com/admin/settings/keys) auth key (for Tailscale playbook)
 
@@ -127,6 +128,24 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `dns_ctid`, `tailscale_ctid`, `docker_ctid` — container IDs
    - `local_ipv4_subnet` — your LAN subnet
    - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale and Docker container ipfilters (must cover SLAAC addresses)
+
+## Vault (Encrypted Secrets)
+
+Sensitive values (`mail_password`, `speedtest_app_key`, `tailscale_auth_key`) are encrypted inline using `ansible-vault`. The vault password file at `~/.ansible/vault_password` is referenced in `ansible.cfg`, so playbooks decrypt automatically.
+
+**View a decrypted value:**
+
+```bash
+ansible localhost -m debug -a "var=mail_password" -e @group_vars/all.yml
+```
+
+**Encrypt a new value:**
+
+```bash
+ansible-vault encrypt_string 'my-secret-value' --name 'variable_name'
+```
+
+Copy the output and replace the variable in the relevant `group_vars/*.yml` file.
 
 ## Deploy
 
