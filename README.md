@@ -95,14 +95,14 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `bypass_devices` — devices that skip NextDNS filtering
    - `static_leases` — fixed DHCP reservations
    - `host_records` — DNS records for devices with static IPs that don't use DHCP
-   - `dns_alert_mail_*` — SMTP settings for IPv6 DNS reset email alerts
 
 5. Edit `group_vars/tailscale_nodes.yml` with your Tailscale settings:
    - `tailscale_auth_key` — auth key from the Tailscale admin console
    - `ula_address` — static ULA address for the container (assigned alongside SLAAC)
    - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
 
-6. Edit `group_vars/all.yml` with shared service ports (used by both Docker and Proxmox firewall):
+6. Edit `group_vars/all.yml` with shared settings:
+   - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from` — SMTP settings for email notifications (DNS alerts + Speedtest)
    - `dockge_port` — Dockge web UI port (default: 5001)
    - `emby_port_http`, `emby_port_https` — Emby ports (default: 8096, 8920)
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
@@ -114,7 +114,6 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
    - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/))
    - `speedtest_schedule` — cron schedule for speed tests
    - `speedtest_servers` — comma-separated Ookla server IDs
-   - `speedtest_mail_*` — SMTP settings for email notifications
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
    - `nas_media_path` — bind mount path for Emby media library (Synology NFS)
    - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
@@ -169,7 +168,7 @@ The container playbooks include workarounds for Proxmox LXC containers:
 docs/
   proxmox-lxc-setup.md            # LXC container creation guide
 group_vars/
-  all.yml.example                  # Shared service ports (Docker + firewall)
+  all.yml.example                  # Shared settings (email, service ports)
   dns_servers.yml.example          # Example DNS variables
   docker_hosts.yml.example         # Example Docker variables
   proxmox_hosts.yml.example        # Example Proxmox variables

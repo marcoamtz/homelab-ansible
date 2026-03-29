@@ -32,12 +32,13 @@ speedtest_schedule: "6 */1 * * *"
 speedtest_servers: ""
 speedtest_prune_days: "90"
 # Email notifications (optional)
-speedtest_mail_host: "smtp.example.com"
+# Mail credentials are shared — see group_vars/all.yml
+speedtest_mail_host: "{{ mail_host }}"
 speedtest_mail_encryption: "ssl"
-speedtest_mail_port: "465"
-speedtest_mail_username: "user@example.com"
-speedtest_mail_password: "XXXXXXXXXXXXXXXX"
-speedtest_mail_from: "user@example.com"
+speedtest_mail_port: "{{ mail_port }}"
+speedtest_mail_username: "{{ mail_username }}"
+speedtest_mail_password: "{{ mail_password }}"
+speedtest_mail_from: "{{ mail_from }}"
 
 # === qBittorrent ===
 qbittorrent_config_dir: "/opt/stacks/qbittorrent/config"

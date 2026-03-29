@@ -1,4 +1,11 @@
 ---
+# Shared email settings — used by DNS alerts and Speedtest Tracker notifications.
+mail_host: "smtp.gmail.com"
+mail_port: "465"
+mail_username: "you@example.com"
+mail_password: "your-app-password"
+mail_from: "you@example.com"
+
 # Shared service ports — used by both Docker compose templates and Proxmox firewall rules.
 # Define once here to avoid desync between container binds and firewall allows.
 dockge_port: 5001
