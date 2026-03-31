@@ -58,6 +58,10 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 - IPSet-based network aliases (local network, Tailscale network)
 - Container-level firewall configs with IPv6 ipfilter for SLAAC
 
+### `update-all.yml` — Package Updates
+
+Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgraded.
+
 ## Prerequisites
 
 - Proxmox LXC containers running Debian/Ubuntu with systemd

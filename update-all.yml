@@ -7,3 +7,9 @@
       apt:
         update_cache: yes
         upgrade: dist
+      register: apt_result
+
+    - name: Show upgraded packages
+      debug:
+        msg: "{{ apt_result.stdout_lines | default([]) }}"
+      when: apt_result.changed
