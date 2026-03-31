@@ -184,7 +184,6 @@ The container playbooks include workarounds for Proxmox LXC containers:
 - Uses `systemctl` commands directly instead of the Ansible `systemd` module (which fails to enumerate services inside LXC)
 - Pins `/etc/resolv.conf` to `127.0.0.1` and creates `.pve-ignore.resolv.conf` to prevent Proxmox from overwriting it (DNS playbook)
 - Applies `sysctl` settings via handler when config changes, plus a `@reboot` cron job since LXC hosts can reset forwarding on container restart (Tailscale and Docker playbooks)
-- Docker waits for NFS and ZFS bind mounts via a systemd `RequiresMountsFor` override, preventing containers from starting with empty mount points after LXC restarts (Docker playbook)
 
 ## Project Structure
 

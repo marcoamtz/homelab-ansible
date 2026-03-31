@@ -7,7 +7,7 @@ services:
       - "{{ emby_port_https }}:8920"
     volumes:
       - {{ emby_config_dir }}:/config
-      - {{ emby_media_dir }}:/mnt/media
+      - {{ emby_media_dir }}:/mnt/media:rslave
       - {{ emby_transcode_dir }}:/config/transcoding-temp
     environment:
       UID: "{{ emby_uid }}"

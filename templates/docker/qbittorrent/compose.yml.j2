@@ -9,7 +9,7 @@ services:
     volumes:
       - {{ qbittorrent_config_dir }}:/config
       - {{ qbittorrent_incomplete_dir }}:/downloads/incomplete
-      - {{ qbittorrent_complete_dir }}:/downloads/complete
+      - {{ qbittorrent_complete_dir }}:/downloads/complete:rslave
     environment:
       PUID: "{{ qbittorrent_puid }}"
       PGID: "{{ qbittorrent_pgid }}"

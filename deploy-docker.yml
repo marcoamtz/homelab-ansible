@@ -83,27 +83,6 @@
         minute: "0"
         job: "docker image prune -af --filter 'until=720h' > /dev/null 2>&1"
 
-    - name: Create Docker systemd override directory
-      file:
-        path: /etc/systemd/system/docker.service.d
-        state: directory
-        mode: "0755"
-
-    # Wait for LXC bind mounts before starting Docker — without this, Docker
-    # containers can start with empty mount points if mounts aren't ready yet.
-    - name: Ensure Docker waits for NFS and ZFS mounts
-      copy:
-        content: |
-          [Unit]
-          RequiresMountsFor={{ nas_media_path }} {{ nas_complete_path }} /mnt/tank
-        dest: /etc/systemd/system/docker.service.d/wait-for-mounts.conf
-        owner: root
-        group: root
-        mode: "0644"
-      notify:
-        - Reload systemd
-        - Restart docker
-
     # Use systemctl directly — the Ansible systemd module fails to enumerate
     # services inside Proxmox LXC containers.
     - name: Enable and start Docker
