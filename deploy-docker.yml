@@ -4,11 +4,11 @@
   become: yes
 
   tasks:
-    - name: Verify NFS mounts are available
-      stat:
-        path: "{{ item }}"
+    - name: Verify NFS paths are actually mounted
+      command: findmnt --noheadings "{{ item }}"
       register: nfs_check
-      failed_when: not nfs_check.stat.exists
+      failed_when: nfs_check.rc != 0
+      changed_when: false
       loop:
         - "{{ nas_media_path }}"
         - "{{ nas_complete_path }}"
@@ -62,7 +62,7 @@
         content: |
           net.ipv6.conf.all.accept_ra=2
           net.ipv6.conf.eth0.accept_ra=2
-        dest: /etc/sysctl.conf
+        dest: /etc/sysctl.d/99-docker-ra.conf
         owner: root
         group: root
         mode: "0644"
@@ -73,7 +73,7 @@
       cron:
         name: "sysctl-accept-ra"
         special_time: reboot
-        job: "/sbin/sysctl -p && /usr/bin/rdisc6 -1 eth0"
+        job: "/sbin/sysctl --system && /usr/bin/rdisc6 -1 eth0"
 
     - name: Monthly Docker image cleanup
       cron:
@@ -218,7 +218,7 @@
 
   handlers:
     - name: Apply sysctl settings
-      command: sysctl -p
+      command: sysctl --system
       changed_when: false
 
     - name: Generate locales

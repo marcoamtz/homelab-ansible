@@ -15,7 +15,7 @@ Deploys [NextDNS CLI](https://github.com/nextdns/nextdns) and [dnsmasq](https://
 - Tailscale MagicDNS forwarding
 - Dnsmasq config validation before restart
 - Stale config cleanup (removed local configs are removed from the server)
-- IPv6 DNS reset detection with email alerts (ISP TR-069 monitoring)
+- IPv6 DNS reset detection with email alerts (ISP TR-069 monitoring, retry on mail failure)
 - Post-deploy DNS smoke test
 
 ### `deploy-tailscale.yml` — Tailscale Subnet Router
@@ -38,6 +38,7 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 - Speedtest Tracker for internet speed monitoring
 - qBittorrent torrent client with split storage (incomplete on NVMe, complete on NFS)
 - Dual-stack IPv4/IPv6 networking with SLAAC for incoming IPv6 peer connections
+- NFS mount validation before starting stacks (fails if bind mounts are not active)
 - Monthly cron to prune unused Docker images
 - All service ports configurable via group_vars
 - Post-deploy health checks

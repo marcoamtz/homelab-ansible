@@ -28,8 +28,9 @@
       args:
         creates: /usr/bin/tailscale
 
-    # Write directly to sysctl.conf — the sysctl module's reload can silently
-    # fail inside Proxmox LXC containers.
+    # Use a sysctl.d drop-in instead of /etc/sysctl.conf to avoid overwriting
+    # unrelated kernel tunables. The sysctl module's reload can silently fail
+    # inside Proxmox LXC containers, so we apply via handler.
     - name: Deploy sysctl configuration
       copy:
         content: |
@@ -37,7 +38,7 @@
           net.ipv6.conf.all.forwarding=1
           net.ipv6.conf.all.accept_ra=2
           net.ipv6.conf.eth0.accept_ra=2
-        dest: /etc/sysctl.conf
+        dest: /etc/sysctl.d/99-tailscale.conf
         owner: root
         group: root
         mode: "0644"
@@ -49,7 +50,7 @@
       cron:
         name: "sysctl-forwarding"
         special_time: reboot
-        job: "/sbin/sysctl -p && /usr/bin/rdisc6 -1 eth0"
+        job: "/sbin/sysctl --system && /usr/bin/rdisc6 -1 eth0"
 
     # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
     - name: Assign static ULA address
@@ -94,5 +95,5 @@
 
   handlers:
     - name: Apply sysctl settings
-      command: sysctl -p
+      command: sysctl --system
       changed_when: false

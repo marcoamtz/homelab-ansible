@@ -11,9 +11,11 @@ if echo "$ra_output" | grep -q "Recursive DNS server"; then
     # RDNSS present — ISP reset DNS to "DNS agent"
     [ -f "$LOCK_FILE" ] && exit 0
 
-    printf "Subject: [HOMELAB] ISP reset IPv6 DNS on router\nFrom: {{ dns_alert_mail_from }}\nTo: {{ dns_alert_mail_to }}\n\nThe router is advertising a DNS server via Router Advertisement RDNSS.\nThis means the ISP reset the IPv6 DNS source from \"Static configuration\" back to \"DNS agent\".\n\nRouter RA output:\n%s\n\nFix: Log into the router and set IPv6 DNS source back to \"Static configuration\" pointing to {{ dns_server_ipv6 }}.\n\nTimestamp: $(date -Iseconds)\nHost: $(hostname)\n" "$ra_output" | /usr/bin/msmtp {{ dns_alert_mail_to }}
-
-    touch "$LOCK_FILE"
+    if printf "Subject: [HOMELAB] ISP reset IPv6 DNS on router\nFrom: {{ dns_alert_mail_from }}\nTo: {{ dns_alert_mail_to }}\n\nThe router is advertising a DNS server via Router Advertisement RDNSS.\nThis means the ISP reset the IPv6 DNS source from \"Static configuration\" back to \"DNS agent\".\n\nRouter RA output:\n%s\n\nFix: Log into the router and set IPv6 DNS source back to \"Static configuration\" pointing to {{ dns_server_ipv6 }}.\n\nTimestamp: $(date -Iseconds)\nHost: $(hostname)\n" "$ra_output" | /usr/bin/msmtp {{ dns_alert_mail_to }}; then
+        touch "$LOCK_FILE"
+    else
+        logger -t check-ipv6-dns "Failed to send DNS alert email, will retry next run"
+    fi
 else
     # No RDNSS — router is correctly configured
     rm -f "$LOCK_FILE"
