@@ -73,7 +73,7 @@
       cron:
         name: "sysctl-accept-ra"
         special_time: reboot
-        job: "/sbin/sysctl --system && /usr/bin/rdisc6 -1 eth0"
+        job: "/sbin/sysctl -p /etc/sysctl.d/99-docker-ra.conf && /usr/bin/rdisc6 -1 eth0"
 
     - name: Monthly Docker image cleanup
       cron:
@@ -218,7 +218,7 @@
 
   handlers:
     - name: Apply sysctl settings
-      command: sysctl --system
+      command: sysctl -p /etc/sysctl.d/99-docker-ra.conf
       changed_when: false
 
     - name: Generate locales

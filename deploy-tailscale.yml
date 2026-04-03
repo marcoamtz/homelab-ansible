@@ -50,7 +50,7 @@
       cron:
         name: "sysctl-forwarding"
         special_time: reboot
-        job: "/sbin/sysctl --system && /usr/bin/rdisc6 -1 eth0"
+        job: "/sbin/sysctl -p /etc/sysctl.d/99-tailscale.conf && /usr/bin/rdisc6 -1 eth0"
 
     # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
     - name: Assign static ULA address
@@ -95,5 +95,5 @@
 
   handlers:
     - name: Apply sysctl settings
-      command: sysctl --system
+      command: sysctl -p /etc/sysctl.d/99-tailscale.conf
       changed_when: false
