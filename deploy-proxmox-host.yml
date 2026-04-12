@@ -18,11 +18,8 @@
 
     - name: Set GPU device permissions
       file:
-        path: "{{ item }}"
+        path: /dev/dri/renderD128
         mode: "0666"
-      loop:
-        - /dev/dri/renderD128
-        - /dev/dri/card0
 
     - name: Enable weekly TRIM for OS drive
       command: systemctl enable --now fstrim.timer

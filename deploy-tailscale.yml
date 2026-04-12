@@ -71,14 +71,14 @@
       changed_when: false
       failed_when: false
 
-    - name: Authenticate and start Tailscale
-      command: >
-        tailscale up
-        --authkey={{ tailscale_auth_key }}
-        {{ tailscale_args }}
-      register: ts_up
-      changed_when: ts_status.rc != 0
+    - name: Authenticate Tailscale
+      command: tailscale up --authkey={{ tailscale_auth_key }}
+      when: ts_status.rc != 0
       no_log: true
+
+    - name: Apply Tailscale settings
+      command: tailscale set {{ tailscale_args }}
+      changed_when: false
 
     # Use systemctl directly — the Ansible systemd module fails to enumerate
     # services inside Proxmox LXC containers.
