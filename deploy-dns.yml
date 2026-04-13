@@ -26,12 +26,6 @@
       no_log: true
       notify: Reload systemd
 
-    - name: Upgrade NextDNS CLI via apt
-      apt:
-        name: nextdns
-        state: latest
-      notify: Restart nextdns
-
     - name: Ensure dnsmasq.d directory exists
       file:
         path: /etc/dnsmasq.d
