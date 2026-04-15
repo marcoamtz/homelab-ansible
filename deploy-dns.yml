@@ -12,7 +12,7 @@
   tasks:
     - name: Install system requirements
       apt:
-        name: [dnsmasq, curl, gnupg, debian-archive-keyring, dnsutils]
+        name: [dnsmasq, curl, gnupg, debian-archive-keyring, dnsutils, ndisc6, msmtp]
         state: present
         update_cache: yes
 
@@ -93,11 +93,6 @@
         - dnsmasq
 
     # --- IPv6 DNS reset monitoring ---
-    - name: Install monitoring dependencies
-      apt:
-        name: [ndisc6, msmtp]
-        state: present
-
     - name: Deploy msmtp configuration
       template:
         src: msmtprc.j2

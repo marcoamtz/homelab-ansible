@@ -5,7 +5,7 @@ services:
     ports:
       - "{{ speedtest_port }}:80"
     volumes:
-      - {{ speedtest_config_dir }}:/config
+      - "{{ speedtest_config_dir }}:/config"
     environment:
       PUID: "{{ speedtest_puid }}"
       PGID: "{{ speedtest_pgid }}"

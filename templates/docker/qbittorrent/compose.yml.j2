@@ -7,9 +7,9 @@ services:
       - "{{ qbittorrent_port_torrent }}:6881"
       - "{{ qbittorrent_port_torrent }}:6881/udp"
     volumes:
-      - {{ qbittorrent_config_dir }}:/config
-      - {{ qbittorrent_incomplete_dir }}:/downloads/incomplete
-      - {{ qbittorrent_complete_dir }}:/downloads/complete:rslave
+      - "{{ qbittorrent_config_dir }}:/config"
+      - "{{ qbittorrent_incomplete_dir }}:/downloads/incomplete"
+      - "{{ qbittorrent_complete_dir }}:/downloads/complete:rslave"
     environment:
       PUID: "{{ qbittorrent_puid }}"
       PGID: "{{ qbittorrent_pgid }}"

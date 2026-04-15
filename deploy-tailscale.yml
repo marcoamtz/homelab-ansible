@@ -65,6 +65,13 @@
         'RTNETLINK answers: File exists' not in ula_result.stderr and
         'address already assigned' not in ula_result.stderr
 
+    # Use systemctl directly — the Ansible systemd module fails to enumerate
+    # services inside Proxmox LXC containers.
+    - name: Enable and start Tailscale
+      command: systemctl enable --now tailscaled
+      register: service_result
+      changed_when: "'Created symlink' in service_result.stderr"
+
     - name: Check Tailscale status
       command: tailscale status
       register: ts_status
@@ -79,13 +86,6 @@
     - name: Apply Tailscale settings
       command: tailscale set {{ tailscale_args }}
       changed_when: false
-
-    # Use systemctl directly — the Ansible systemd module fails to enumerate
-    # services inside Proxmox LXC containers.
-    - name: Enable and start Tailscale
-      command: systemctl enable --now tailscaled
-      register: service_result
-      changed_when: "'Created symlink' in service_result.stderr"
 
     - name: Verify Tailscale is online
       command: tailscale ip -4

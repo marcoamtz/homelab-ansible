@@ -34,7 +34,7 @@ static_leases:
 
 # === IPv6 DNS Reset Notification ===
 # Mail credentials are shared — see group_vars/all.yml
-dns_alert_mail_to: "{{ mail_from }}"
+dns_alert_mail_to: "{{ mail_to }}"
 dns_alert_mail_from: "{{ mail_from }}"
 dns_alert_mail_host: "{{ mail_host }}"
 dns_alert_mail_port: "{{ mail_port }}"

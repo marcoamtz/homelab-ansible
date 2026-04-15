@@ -22,3 +22,4 @@ secrets/
 # MCP server metadata
 entities.json
 mempalace.yaml
+.memsearch/

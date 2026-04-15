@@ -8,9 +8,11 @@
     # template module fails on new files because it cannot rename temp files.
     # Pre-create empty files so template only needs to overwrite in place.
     - name: Ensure firewall config files exist
-      command: touch {{ item }}
-      args:
-        creates: "{{ item }}"
+      file:
+        path: "{{ item }}"
+        state: touch
+        modification_time: preserve
+        access_time: preserve
       loop:
         - /etc/pve/firewall/cluster.fw
         - "/etc/pve/firewall/{{ dns_ctid }}.fw"
