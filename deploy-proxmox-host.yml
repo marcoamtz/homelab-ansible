@@ -33,5 +33,5 @@
 
   handlers:
     - name: Reload udev rules
-      command: udevadm control --reload-rules
+      shell: udevadm control --reload-rules && udevadm trigger --subsystem-match=drm
       changed_when: false

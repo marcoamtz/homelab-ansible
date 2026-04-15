@@ -10,16 +10,7 @@
         state: present
         update_cache: yes
 
-    - name: Enable en_US.UTF-8 locale
-      lineinfile:
-        path: /etc/locale.gen
-        regexp: '^# en_US.UTF-8 UTF-8'
-        line: 'en_US.UTF-8 UTF-8'
-      register: locale_gen_result
-
-    - name: Generate locales
-      command: locale-gen
-      when: locale_gen_result.changed
+    - import_tasks: tasks/locale.yml
 
     # WARNING: Pipes a remote script to shell as root. This is Tailscale's official
     # install method, but carries inherent supply-chain risk.

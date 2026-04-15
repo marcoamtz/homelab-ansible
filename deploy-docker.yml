@@ -19,16 +19,7 @@
         state: present
         update_cache: yes
 
-    - name: Enable en_US.UTF-8 locale
-      lineinfile:
-        path: /etc/locale.gen
-        regexp: '^# en_US.UTF-8 UTF-8'
-        line: 'en_US.UTF-8 UTF-8'
-      register: locale_gen_result
-
-    - name: Generate locales
-      command: locale-gen
-      when: locale_gen_result.changed
+    - import_tasks: tasks/locale.yml
 
     - name: Add Docker GPG key
       shell: |
@@ -48,7 +39,6 @@
       apt:
         name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
         state: present
-        update_cache: yes
 
     - name: Deploy Docker daemon configuration
       template:
@@ -58,6 +48,10 @@
         group: root
         mode: "0644"
       notify: Restart docker
+
+    # Restart Docker now if daemon.json changed — container tasks below
+    # depend on the new configuration being active.
+    - meta: flush_handlers
 
     # Docker with ip6tables enables IPv6 forwarding, which disables SLAAC RA
     # acceptance. Set accept_ra=2 to accept RAs even with forwarding enabled.
@@ -203,7 +197,7 @@
       command: "curl -sf http://localhost:{{ dockge_port }}"
       register: dockge_check
       changed_when: false
-      failed_when: dockge_check.rc != 0
+      until: dockge_check.rc == 0
       retries: 3
       delay: 5
 

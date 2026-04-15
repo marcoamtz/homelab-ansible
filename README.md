@@ -108,7 +108,7 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
    - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
 
 6. Edit `group_vars/all.yml` with shared settings:
-   - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from` — SMTP settings for email notifications (DNS alerts + Speedtest)
+   - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from`, `mail_to` — SMTP settings for email notifications (DNS alerts + Speedtest)
    - `dockge_port` — Dockge web UI port (default: 5001)
    - `emby_port_http`, `emby_port_https` — Emby ports (default: 8096, 8920)
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
@@ -191,6 +191,8 @@ The container playbooks include workarounds for Proxmox LXC containers:
 ```
 docs/
   proxmox-lxc-setup.md            # LXC container creation guide
+tasks/
+  locale.yml                       # Shared locale setup (en_US.UTF-8)
 group_vars/
   all.yml.example                  # Shared settings (email, service ports)
   dns_servers.yml.example          # Example DNS variables
