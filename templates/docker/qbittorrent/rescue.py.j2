@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+# Force-recheck torrents stuck in 'missingFiles' state — the state qBittorrent
+# enters after a transient NFS hiccup and never auto-clears. State is persisted
+# across runs to ignore blips (grace) and avoid recheck loops (cooldown).
+import http.cookiejar
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+import urllib.parse
+import urllib.request
+
+API = "http://localhost:{{ qbittorrent_port_webui }}"
+STATE_PATH = "/var/lib/qbittorrent-rescue/state.json"
+GRACE_SECONDS = {{ qbittorrent_rescue_grace_seconds }}
+COOLDOWN_SECONDS = {{ qbittorrent_rescue_cooldown_seconds }}
+USERNAME = os.environ["QBITTORRENT_USER"]
+PASSWORD = os.environ["QBITTORRENT_PASS"]
+MAIL_TO = "{{ mail_to }}"
+MAIL_FROM = "{{ mail_from }}"
+
+
+def api_request(opener, path, data=None):
+    url = f"{API}{path}"
+    headers = {"Referer": API}
+    if data is None:
+        req = urllib.request.Request(url, headers=headers)
+    else:
+        req = urllib.request.Request(
+            url, data=urllib.parse.urlencode(data).encode(), headers=headers
+        )
+    return opener.open(req, timeout=15).read().decode()
+
+
+def load_state():
+    try:
+        with open(STATE_PATH) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_state(state):
+    os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
+    tmp = STATE_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f, indent=2, sort_keys=True)
+    os.replace(tmp, STATE_PATH)
+
+
+def send_mail(subject, body):
+    msg = f"From: {MAIL_FROM}\nTo: {MAIL_TO}\nSubject: {subject}\n\n{body}\n"
+    subprocess.run(
+        ["msmtp", MAIL_TO], input=msg, text=True, check=True, timeout=30
+    )
+
+
+def main():
+    cookies = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPCookieProcessor(cookies)
+    )
+
+    auth = api_request(
+        opener, "/api/v2/auth/login",
+        {"username": USERNAME, "password": PASSWORD},
+    )
+    if auth.strip() != "Ok.":
+        print(f"qbittorrent auth failed: {auth!r}", file=sys.stderr)
+        sys.exit(1)
+
+    raw = api_request(opener, "/api/v2/torrents/info")
+    torrents = json.loads(raw)
+    missing = {
+        t["hash"]: t.get("name", t["hash"])
+        for t in torrents
+        if t.get("state") == "missingFiles"
+    }
+
+    state = load_state()
+    now = int(time.time())
+    next_state = {}
+    to_recheck = []
+
+    for h, name in missing.items():
+        prev = state.get(h, {})
+        first_seen = prev.get("first_seen", now)
+        last_recheck = prev.get("last_recheck")
+
+        in_cooldown = (
+            last_recheck is not None
+            and now - last_recheck < COOLDOWN_SECONDS
+        )
+        ripe = now - first_seen >= GRACE_SECONDS
+
+        if ripe and not in_cooldown:
+            to_recheck.append((h, name))
+            next_state[h] = {"first_seen": first_seen, "last_recheck": now}
+        else:
+            next_state[h] = {"first_seen": first_seen, "last_recheck": last_recheck}
+
+    # Carry forward cooldown records for torrents that left missingFiles state
+    # (e.g. we rechecked them and they're now in checkingResumeData/checkingUP).
+    # Without this, a recheck that finds files truly gone would restart the
+    # grace clock on the next cycle and we'd loop.
+    for h, prev in state.items():
+        if h in next_state:
+            continue
+        last_recheck = prev.get("last_recheck")
+        if last_recheck is not None and now - last_recheck < COOLDOWN_SECONDS:
+            next_state[h] = prev
+
+    save_state(next_state)
+
+    if not to_recheck:
+        return
+
+    api_request(
+        opener, "/api/v2/torrents/recheck",
+        {"hashes": "|".join(h for h, _ in to_recheck)},
+    )
+
+    summary = "\n".join(f"  - {name} ({h[:12]})" for h, name in to_recheck)
+    count = len(to_recheck)
+    print(f"rechecked {count} torrent(s) stuck in missingFiles")
+
+    try:
+        send_mail(
+            f"[{socket.gethostname()}] qbittorrent-rescue: rechecked {count} torrent(s)",
+            f"qBittorrent had {count} torrent(s) stuck in missingFiles state for "
+            f">= {GRACE_SECONDS}s. A force-recheck was issued:\n\n{summary}\n\n"
+            f"If a torrent reappears in this email after another cooldown "
+            f"({COOLDOWN_SECONDS}s), its files are likely actually missing.",
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        print(f"email send failed: {exc}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

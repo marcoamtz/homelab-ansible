@@ -121,6 +121,8 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
    - `speedtest_schedule` — cron schedule for speed tests
    - `speedtest_servers` — comma-separated Ookla server IDs
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
+   - `qbittorrent_rescue_username`, `qbittorrent_rescue_password` — WebUI credentials for the rescue self-healer (force-rechecks torrents stuck in `missingFiles` state after NAS hiccups)
+   - `qbittorrent_rescue_interval`, `qbittorrent_rescue_grace_seconds`, `qbittorrent_rescue_cooldown_seconds` — rescue timer cadence and per-torrent guards
    - `nas_media_path` — bind mount path for Emby media library (Synology NFS)
    - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
    - `qbittorrent_incomplete_dir` — path for active downloads (ZFS bind mount)
@@ -136,7 +138,7 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
 
 ## Vault (Encrypted Secrets)
 
-Sensitive values (`mail_password`, `speedtest_app_key`, `tailscale_auth_key`) are encrypted inline using `ansible-vault`. The vault password file at `~/.ansible/vault_password` is referenced in `ansible.cfg`, so playbooks decrypt automatically.
+Sensitive values (`mail_password`, `speedtest_app_key`, `tailscale_auth_key`, `qbittorrent_rescue_password`) are encrypted inline using `ansible-vault`. The vault password file at `~/.ansible/vault_password` is referenced in `ansible.cfg`, so playbooks decrypt automatically.
 
 **View a decrypted value:**
 
@@ -209,7 +211,12 @@ templates/
     dockge/compose.yml.j2          # Dockge compose stack
     emby/compose.yml.j2            # Emby media server
     speedtest-tracker/compose.yml.j2  # Speedtest Tracker
-    qbittorrent/compose.yml.j2     # qBittorrent torrent client
+    qbittorrent/
+      compose.yml.j2               # qBittorrent torrent client
+      rescue.py.j2                 # missingFiles self-healer (force-recheck via WebAPI)
+      rescue.service.j2            # systemd oneshot service
+      rescue.timer.j2              # systemd timer (5min)
+      rescue.env.j2                # WebUI credentials (vaulted)
   proxmox/firewall/
     cluster.fw.j2                  # Datacenter firewall and security groups
     ct-dns.fw.j2                   # DNS container firewall

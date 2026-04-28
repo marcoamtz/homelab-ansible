@@ -50,6 +50,24 @@ qbittorrent_complete_dir: "{{ nas_complete_path }}"
 qbittorrent_puid: "1000"
 qbittorrent_pgid: "1000"
 
+# === qBittorrent rescue ===
+# Self-healer: detects torrents stuck in 'missingFiles' state (typically after
+# the NAS reboots and pvestatd briefly remounts the NFS storage) and issues a
+# force-recheck via the WebAPI. Replaces the manual "restart the container"
+# response. State-tracked so transient blips don't trigger action and so
+# genuinely-missing files don't loop into recheck/email spam.
+qbittorrent_rescue_interval: "5min"
+# A torrent must be observed in missingFiles for this many seconds before we
+# act. Set comfortably below the timer interval so two consecutive sightings
+# always confirm.
+qbittorrent_rescue_grace_seconds: 120
+# Per-torrent cooldown: don't recheck the same torrent more than once per
+# hour even if it's still showing missingFiles.
+qbittorrent_rescue_cooldown_seconds: 3600
+qbittorrent_rescue_username: "admin"
+# Encrypt with: ansible-vault encrypt_string 'YOUR_QB_PASSWORD' --name 'qbittorrent_rescue_password'
+qbittorrent_rescue_password: "REPLACE_WITH_VAULTED_PASSWORD"
+
 # === Docker ===
 docker_timezone: "America/Mexico_City"
 # ULA subnet for Docker's default bridge network

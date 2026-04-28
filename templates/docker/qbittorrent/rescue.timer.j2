@@ -1,0 +1,11 @@
+[Unit]
+Description=qBittorrent missingFiles self-healer (periodic)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec={{ qbittorrent_rescue_interval }}
+Persistent=true
+Unit=qbittorrent-rescue.service
+
+[Install]
+WantedBy=timers.target

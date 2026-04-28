@@ -15,9 +15,17 @@
 
     - name: Install system requirements
       apt:
-        name: [ca-certificates, curl, gnupg, locales, ndisc6]
+        name: [ca-certificates, curl, gnupg, locales, ndisc6, msmtp]
         state: present
         update_cache: yes
+
+    - name: Deploy msmtp configuration
+      template:
+        src: msmtprc.j2
+        dest: /etc/msmtprc
+        owner: root
+        group: root
+        mode: "0600"
 
     - import_tasks: tasks/locale.yml
 
@@ -201,9 +209,56 @@
       retries: 3
       delay: 5
 
+    # --- qBittorrent missingFiles self-healer ---
+    - name: Deploy qBittorrent rescue script
+      template:
+        src: docker/qbittorrent/rescue.py.j2
+        dest: /usr/local/bin/qbittorrent-rescue.py
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy qBittorrent rescue credentials
+      template:
+        src: docker/qbittorrent/rescue.env.j2
+        dest: /etc/qbittorrent-rescue.env
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Deploy qBittorrent rescue systemd unit
+      template:
+        src: docker/qbittorrent/rescue.service.j2
+        dest: /etc/systemd/system/qbittorrent-rescue.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload systemd
+
+    - name: Deploy qBittorrent rescue systemd timer
+      template:
+        src: docker/qbittorrent/rescue.timer.j2
+        dest: /etc/systemd/system/qbittorrent-rescue.timer
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload systemd
+
+    - meta: flush_handlers
+
+    - name: Enable qBittorrent rescue timer
+      command: systemctl enable --now qbittorrent-rescue.timer
+      register: rescue_timer_result
+      changed_when: "'Created symlink' in rescue_timer_result.stderr"
+
   handlers:
     - name: Apply sysctl settings
       command: sysctl -p /etc/sysctl.d/99-docker-ra.conf
+      changed_when: false
+
+    - name: Reload systemd
+      command: systemctl daemon-reload
       changed_when: false
 
     - name: Restart docker
