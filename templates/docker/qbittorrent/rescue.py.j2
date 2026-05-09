@@ -63,12 +63,15 @@ def main():
         urllib.request.HTTPCookieProcessor(cookies)
     )
 
-    auth = api_request(
+    api_request(
         opener, "/api/v2/auth/login",
         {"username": USERNAME, "password": PASSWORD},
     )
-    if auth.strip() != "Ok.":
-        print(f"qbittorrent auth failed: {auth!r}", file=sys.stderr)
+    # qBittorrent sets a session cookie (QBT_SID_*) only on successful auth.
+    # Body varies across versions ('Ok.' on <5.x, empty 204 on >=5.x), cookie
+    # presence is the version-stable success signal.
+    if not any(c.name.startswith("QBT_SID") for c in cookies):
+        print("qbittorrent auth failed: no session cookie set", file=sys.stderr)
         sys.exit(1)
 
     raw = api_request(opener, "/api/v2/torrents/info")
