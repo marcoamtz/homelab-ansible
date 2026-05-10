@@ -31,6 +31,31 @@
       register: zfs_trim_result
       changed_when: "'Created symlink' in zfs_trim_result.stderr"
 
+    # --- LXC pre-start NFS wait ---
+    - name: Ensure Proxmox snippets directory exists
+      file:
+        path: /var/lib/vz/snippets
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy LXC pre-start NFS wait hook
+      template:
+        src: proxmox/wait-for-nfs.sh.j2
+        dest: /var/lib/vz/snippets/wait-for-nfs.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Wire pre-start NFS wait hook on LXCs
+      command: "pct set {{ item.key }} --hookscript local:snippets/wait-for-nfs.sh"
+      loop: "{{ lxc_pre_start_nfs_waits | dict2items }}"
+      loop_control:
+        label: "CT {{ item.key }}"
+      register: pct_hookscript_result
+      changed_when: false  # pct set is config-level idempotent; no diff signal
+
   handlers:
     - name: Reload udev rules
       shell: udevadm control --reload-rules && udevadm trigger --subsystem-match=drm

@@ -13,3 +13,14 @@ ipfilter_v6_prefixes:
   - "XXXX:XXXX::/32"  # ISP GUA range (check your delegated prefix)
   - "fd00::/8"         # ULA
   - "fe80::/10"        # Link-local
+
+# === LXC pre-start NFS wait ===
+# Block listed LXCs from booting until their bind-mount NFS sources are
+# mounted on the host. Eliminates the boot race where pvestatd hasn't yet
+# mounted NFS storage when pve-guests starts the LXC, which would otherwise
+# cause bind mounts to capture empty dirs.
+lxc_pre_start_nfs_timeout: 300
+lxc_pre_start_nfs_waits:
+  102:
+    - /mnt/pve/nfs-share-1
+    - /mnt/pve/nfs-share-2

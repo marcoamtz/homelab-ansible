@@ -135,6 +135,7 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
    - `dns_ctid`, `tailscale_ctid`, `docker_ctid` — container IDs
    - `local_ipv4_subnet` — your LAN subnet
    - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale and Docker container ipfilters (must cover SLAAC addresses)
+   - `lxc_pre_start_nfs_waits`, `lxc_pre_start_nfs_timeout` — per-CT list of NFS mount paths that must be mounted on the host before the LXC is allowed to start (eliminates bind-mount-captures-empty-dir race on Proxmox boot)
 
 ## Vault (Encrypted Secrets)
 
@@ -217,11 +218,13 @@ templates/
       rescue.service.j2            # systemd oneshot service
       rescue.timer.j2              # systemd timer (5min)
       rescue.env.j2                # WebUI credentials (vaulted)
-  proxmox/firewall/
-    cluster.fw.j2                  # Datacenter firewall and security groups
-    ct-dns.fw.j2                   # DNS container firewall
-    ct-docker.fw.j2                # Docker container firewall
-    ct-tailscale.fw.j2             # Tailscale container firewall + ipfilter
+  proxmox/
+    firewall/
+      cluster.fw.j2                # Datacenter firewall and security groups
+      ct-dns.fw.j2                 # DNS container firewall
+      ct-docker.fw.j2              # Docker container firewall
+      ct-tailscale.fw.j2           # Tailscale container firewall + ipfilter
+    wait-for-nfs.sh.j2             # CT pre-start hook: block LXC boot until NFS mounted
   check-ipv6-dns.sh.j2             # IPv6 DNS reset detection script
   msmtprc.j2                       # SMTP client config for email alerts
   nextdns.conf.j2                  # NextDNS CLI config
