@@ -2,7 +2,8 @@
   "ipv6": true,
   "fixed-cidr-v6": "{{ docker_ipv6_cidr }}",
   "ip6tables": true,
-  "experimental": true,
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "10m", "max-file": "3" },
   "default-address-pools": [
     { "base": "172.17.0.0/12", "size": 24 },
     { "base": "{{ docker_ipv6_pool }}", "size": 64 }

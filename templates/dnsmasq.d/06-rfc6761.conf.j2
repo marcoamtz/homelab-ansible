@@ -9,7 +9,10 @@ server=/invalid/
 
 # Do not forward reverse DNS lookups for the local subnet
 server=/{{ dns_server_ip.split('.')[:3] | reverse | join('.') }}.in-addr.arpa/
-server=/1.0.0.0.0.0.0.0.0.0.0.0.0.0.d.f.ip6.arpa/
+# IPv6 reverse zone derived from ipv6_prefix (assumes /64 = 4 segments).
+{% set ns = namespace(hex='') %}
+{% for s in ipv6_prefix.split(':') %}{% set ns.hex = ns.hex + s.rjust(4, '0') %}{% endfor %}
+server=/{{ ns.hex | reverse | list | join('.') }}.ip6.arpa/
 
 # The same RFC requests something similar for
 #     10.in-addr.arpa.      21.172.in-addr.arpa.  27.172.in-addr.arpa.
