@@ -1,9 +1,0 @@
-[Unit]
-Description=qBittorrent missingFiles self-healer
-After=docker.service
-Wants=docker.service
-
-[Service]
-Type=oneshot
-EnvironmentFile=/etc/qbittorrent-rescue.env
-ExecStart=/usr/local/bin/qbittorrent-rescue.py
