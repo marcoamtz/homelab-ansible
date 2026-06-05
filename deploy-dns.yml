@@ -109,10 +109,10 @@
         group: root
         mode: "0755"
 
-    - name: Schedule IPv6 DNS check every 5 minutes
+    - name: Schedule IPv6 DNS check every 15 minutes
       cron:
         name: "check-ipv6-dns"
-        minute: "*/5"
+        minute: "*/15"
         job: "/usr/local/bin/check-ipv6-dns.sh"
 
     - name: Verify DNS resolution works
