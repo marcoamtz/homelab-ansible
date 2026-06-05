@@ -15,17 +15,9 @@
 
     - name: Install system requirements
       apt:
-        name: [ca-certificates, curl, gnupg, locales, ndisc6, msmtp]
+        name: [ca-certificates, curl, gnupg, locales, ndisc6]
         state: present
         update_cache: yes
-
-    - name: Deploy msmtp configuration
-      template:
-        src: msmtprc.j2
-        dest: /etc/msmtprc
-        owner: root
-        group: root
-        mode: "0600"
 
     - import_tasks: tasks/locale.yml
 
