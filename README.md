@@ -2,6 +2,12 @@
 
 Ansible playbooks for provisioning Proxmox LXC containers with network services.
 
+Playbooks are thin wrappers over roles in `roles/` — shared plumbing
+(packages, locale, msmtp, sysctl, the LXC systemctl workaround) lives in the
+`common` role, and each service has its own role. See
+[docs/architecture.md](docs/architecture.md) for the LXC-specific design
+decisions.
+
 ## Playbooks
 
 ### `deploy-dns.yml` — NextDNS + Dnsmasq
@@ -17,6 +23,10 @@ Deploys [NextDNS CLI](https://github.com/nextdns/nextdns) and [dnsmasq](https://
 - Stale config cleanup (removed local configs are removed from the server)
 - IPv6 DNS reset detection with email alerts (ISP TR-069 monitoring, retry on mail failure)
 - Post-deploy DNS smoke test
+
+> Note: the NextDNS CLI config enables `log-queries` and `report-client-info`,
+> so DNS queries and client names are visible in your NextDNS dashboard.
+> Adjust `roles/dns_server/templates/nextdns.conf.j2` if you don't want that.
 
 ### `deploy-tailscale.yml` — Tailscale Subnet Router
 
@@ -62,11 +72,13 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 ### `update-all.yml` — Package Updates
 
 Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgraded.
+No reboot handling on purpose: LXC containers share the host kernel, so container
+upgrades never require one.
 
 ## Prerequisites
 
 - Proxmox LXC containers running Debian/Ubuntu with systemd
-- Ansible installed on your control machine
+- `ansible-core` 2.15+ on your control machine
 - SSH access to the containers and Proxmox host (key-based)
 - Vault password file at `~/.ansible/vault_password` (see [Vault](#vault-encrypted-secrets) section)
 - A [NextDNS](https://nextdns.io) account and profile ID (for DNS playbook)
@@ -74,7 +86,13 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
 
 ## Setup
 
-1. Create and configure your Proxmox LXC containers following the [LXC setup guide](docs/proxmox-lxc-setup.md).
+1. Install the required collections:
+
+   ```bash
+   ansible-galaxy collection install -r requirements.yml
+   ```
+
+   Create and configure your Proxmox LXC containers following the [LXC setup guide](docs/proxmox-lxc-setup.md).
 
 2. Copy the example files and fill in your values:
 
@@ -103,12 +121,12 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
    - `host_records` — DNS records for devices with static IPs that don't use DHCP
 
 5. Edit `group_vars/tailscale_nodes.yml` with your Tailscale settings:
-   - `tailscale_auth_key` — auth key from the Tailscale admin console
+   - `tailscale_auth_key` — auth key from the Tailscale admin console (🔒 vault-encrypt, see [Vault](#vault-encrypted-secrets))
    - `ula_address` — static ULA address for the container (assigned alongside SLAAC)
    - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
 
 6. Edit `group_vars/all.yml` with shared settings:
-   - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from`, `mail_to` — SMTP settings for email notifications (DNS alerts + Speedtest)
+   - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from`, `mail_to` — SMTP settings for email notifications (DNS alerts + Speedtest); 🔒 vault-encrypt `mail_password`
    - `dockge_port` — Dockge web UI port (default: 5001)
    - `emby_port_http`, `emby_port_https` — Emby ports (default: 8096, 8920)
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
@@ -117,7 +135,7 @@ Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgr
 7. Edit `group_vars/docker_hosts.yml` with your Docker settings:
    - `emby_uid`, `emby_gid` — file ownership for Emby media access
    - `speedtest_url` — IP or hostname for Speedtest Tracker's APP_URL
-   - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/))
+   - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/)); 🔒 vault-encrypt
    - `speedtest_schedule` — cron schedule for speed tests
    - `speedtest_servers` — comma-separated Ookla server IDs
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
@@ -179,55 +197,81 @@ ansible-playbook deploy-docker.yml --check
 ansible-playbook deploy-proxmox-firewall.yml --check
 ```
 
+Partial runs via tags — every task is tagged `install`, `config`, `service`
+or `validate` (plus `firewall` on the firewall playbook):
+
+```bash
+# Re-render configs and restart what changed, skip package installs
+ansible-playbook deploy-docker.yml --tags config,service
+
+# Health checks only
+ansible-playbook deploy-dns.yml --tags validate
+
+# One-shot recursive reset of stack config ownership (off by default)
+ansible-playbook deploy-docker.yml --tags fix-permissions
+```
+
+## Linting
+
+```bash
+pre-commit install        # once; runs yamllint + ansible-lint on commit
+pre-commit run --all-files
+```
+
 ## LXC Notes
 
-The container playbooks include workarounds for Proxmox LXC containers:
+The container roles include workarounds for Proxmox LXC containers —
+`systemctl` via command instead of the `systemd` module, pinned
+`resolv.conf`, sysctl via handler + `@reboot` cron, a pre-start NFS gate on
+the host. The reasoning for each lives in
+[docs/architecture.md](docs/architecture.md).
 
-- Uses `systemctl` commands directly instead of the Ansible `systemd` module (which fails to enumerate services inside LXC)
-- Pins `/etc/resolv.conf` to `127.0.0.1` and creates `.pve-ignore.resolv.conf` to prevent Proxmox from overwriting it (DNS playbook)
-- Applies `sysctl` settings via handler when config changes, plus a `@reboot` cron job since LXC hosts can reset forwarding on container restart (Tailscale and Docker playbooks)
+## Backup
+
+`group_vars/*.yml` and `inventory.ini` are gitignored — the public repo only
+carries `.example` templates, so **this working copy is the only place your
+live config exists**. Secrets inside the real files are vault-encrypted, and
+the vault password lives at `~/.ansible/vault_password` (outside the repo).
+Make sure both are covered by a backup: either a private git remote for the
+real files, or including this directory and the vault password file in your
+machine backup (Time Machine, restic, etc.).
 
 ## Project Structure
 
 ```
 docs/
-  proxmox-lxc-setup.md            # LXC container creation guide
-tasks/
-  locale.yml                       # Shared locale setup (en_US.UTF-8)
+  architecture.md                  # LXC-specific design decisions
+  proxmox-lxc-setup.md             # LXC container creation guide
 group_vars/
   all.yml.example                  # Shared settings (email, service ports)
   dns_servers.yml.example          # Example DNS variables
   docker_hosts.yml.example         # Example Docker variables
   proxmox_hosts.yml.example        # Example Proxmox variables
   tailscale_nodes.yml.example      # Example Tailscale variables
-templates/
-  dnsmasq.d/
-    01-base.conf.j2                # Core dnsmasq settings
-    02-dhcp.conf.j2                # DHCP, static leases, DNS bypass
-    06-rfc6761.conf.j2             # RFC 6761 special domains
-  docker/
-    daemon.json.j2                 # Docker daemon config (IPv6, ip6tables)
-    dockge/compose.yml.j2          # Dockge compose stack
-    emby/compose.yml.j2            # Emby media server
-    speedtest-tracker/compose.yml.j2  # Speedtest Tracker
-    qbittorrent/
-      compose.yml.j2               # qBittorrent torrent client
-  proxmox/
-    firewall/
-      cluster.fw.j2                # Datacenter firewall and security groups
-      ct-dns.fw.j2                 # DNS container firewall
-      ct-docker.fw.j2              # Docker container firewall
-      ct-tailscale.fw.j2           # Tailscale container firewall + ipfilter
-    wait-for-nfs.sh.j2             # CT pre-start hook: block LXC boot until NFS mounted
-  check-ipv6-dns.sh.j2             # IPv6 DNS reset detection script
-  msmtprc.j2                       # SMTP client config for email alerts
-  nextdns.conf.j2                  # NextDNS CLI config
-ansible.cfg                        # Ansible config (default inventory)
-deploy-dns.yml                     # DNS playbook
-deploy-docker.yml                  # Docker + Dockge playbook
+roles/
+  common/                          # Base packages, locale, msmtp, shared LXC plumbing
+    tasks/                         #   systemd_enable, sysctl_dropin, sysctl_reboot_cron
+    templates/msmtprc.j2           #   SMTP client config for email alerts
+  dns_server/                      # NextDNS + dnsmasq + IPv6 DNS reset monitoring
+    templates/dnsmasq.d/           #   base config, DHCP, RFC 6761 special domains
+    templates/nextdns.conf.j2      #   NextDNS CLI config
+    templates/check-ipv6-dns.sh.j2 #   IPv6 DNS reset detection script
+  tailscale_node/                  # Tailscale install, forwarding, ULA, auth
+  docker_host/                     # Docker CE via deb822 repo, daemon.json, IPv6 RA
+    templates/daemon.json.j2       #   Docker daemon config (IPv6, ip6tables)
+  compose_stack/                   # Data-driven compose stacks (see defaults/main.yml)
+    templates/                     #   dockge, emby, speedtest-tracker, qbittorrent
+  proxmox_host/                    # GPU passthrough, TRIM timers, NFS pre-start hook
+    templates/wait-for-nfs.sh.j2   #   CT pre-start hook: block boot until NFS mounted
+  proxmox_firewall/                # Cluster + per-CT firewall configs
+    templates/                     #   cluster.fw, ct-dns.fw, ct-docker.fw, ct-tailscale.fw
+ansible.cfg                        # Ansible config (inventory, fact cache, callbacks)
+requirements.yml                   # Collection pins (community.docker, ansible.posix)
+deploy-dns.yml                     # DNS playbook (common + dns_server)
+deploy-docker.yml                  # Docker playbook (common + docker_host + compose_stack)
 deploy-proxmox-firewall.yml        # Proxmox firewall playbook
-deploy-proxmox-host.yml            # Proxmox host config (GPU passthrough, TRIM)
-deploy-tailscale.yml               # Tailscale playbook
+deploy-proxmox-host.yml            # Proxmox host playbook
+deploy-tailscale.yml               # Tailscale playbook (common + tailscale_node)
 update-all.yml                     # Update packages on all LXC containers
 inventory.ini.example              # Example inventory
 ```

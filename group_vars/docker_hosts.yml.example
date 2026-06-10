@@ -23,6 +23,7 @@ speedtest_config_dir: "/opt/stacks/speedtest-tracker/config"
 speedtest_puid: "1000"
 speedtest_pgid: "1000"
 # Generate at https://speedtest-tracker.dev/
+# Encrypt with: ansible-vault encrypt_string 'base64:...' --name 'speedtest_app_key'
 speedtest_app_key: "base64:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 speedtest_app_name: "Internet Tracker"
 speedtest_public_dashboard: "true"

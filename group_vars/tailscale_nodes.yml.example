@@ -1,5 +1,6 @@
 ---
 # Tailscale auth key — generate at https://login.tailscale.com/admin/settings/keys
+# Encrypt with: ansible-vault encrypt_string 'tskey-auth-...' --name 'tailscale_auth_key'
 tailscale_auth_key: "tskey-auth-XXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
 # Static ULA address — assigned inside the container alongside SLAAC (ip6=auto in Proxmox)

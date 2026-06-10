@@ -12,5 +12,7 @@ proxmox ansible_host=192.168.1.200
 
 [all:vars]
 ansible_user=root
+# Path to the SSH key authorized on the containers and Proxmox host —
+# a dedicated key (e.g. ~/.ssh/id_ed25519_ansible) is recommended.
 ansible_ssh_private_key_file=~/.ssh/id_ed25519
 ansible_python_interpreter=/usr/bin/python3
