@@ -36,12 +36,15 @@
       notify: Apply sysctl settings
 
     # Ensure forwarding survives container restarts — LXC does not reliably
-    # run sysctl.conf at boot.
+    # run sysctl.conf at boot. Also re-add the static ULA: Proxmox regenerates
+    # the container network from its CT config (ip6=auto) on restart, so the
+    # runtime-assigned ULA below would otherwise vanish until the next
+    # playbook run, breaking the advertised IPv6 subnet route.
     - name: Apply IP forwarding on boot
       cron:
         name: "sysctl-forwarding"
         special_time: reboot
-        job: "/sbin/sysctl -p /etc/sysctl.d/99-tailscale.conf && /usr/bin/rdisc6 -1 eth0"
+        job: "/sbin/sysctl -p /etc/sysctl.d/99-tailscale.conf && ( /sbin/ip -6 addr add {{ ula_address }} dev eth0 2>/dev/null || true ) && /usr/bin/rdisc6 -1 eth0"
 
     # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
     - name: Assign static ULA address
