@@ -1,0 +1,6 @@
+---
+# Packages every LXC container needs; playbooks append per-host extras.
+common_base_packages: [curl, gnupg, ndisc6]
+common_extra_packages: []
+common_manage_locale: true
+common_enable_msmtp: false

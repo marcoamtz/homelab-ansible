@@ -1,0 +1,11 @@
+---
+- name: Generate locales
+  ansible.builtin.command: locale-gen
+  changed_when: true
+
+# sysctl --system loads every /etc/sysctl.d drop-in — same as boot behavior.
+# Shelling out is deliberate: the ansible.posix.sysctl module's reload can
+# silently fail inside Proxmox LXC containers (see docs/architecture.md).
+- name: Apply sysctl settings
+  ansible.builtin.command: sysctl --system
+  changed_when: false

@@ -13,7 +13,7 @@ interface={{ network_interface }}
 #bind-interfaces
 bind-dynamic
 
-cache-size=10000
+cache-size={{ dnsmasq_cache_size }}
 
 use-stale-cache
 fast-dns-retry
@@ -22,12 +22,12 @@ edns-packet-max=1232
 server=127.0.0.1#{{ nextdns_listen_port }}
 server=::1#{{ nextdns_listen_port }}
 
-dns-forward-max=350
+dns-forward-max={{ dnsmasq_forward_max }}
 
 expand-hosts
 
-min-cache-ttl=300
-max-cache-ttl=3600
+min-cache-ttl={{ dnsmasq_min_cache_ttl }}
+max-cache-ttl={{ dnsmasq_max_cache_ttl }}
 
 #local-service
 dhcp-name-match=set:hostname-ignore,wpad

@@ -1,0 +1,42 @@
+---
+# Stack definitions consumed by tasks/main.yml. Each entry:
+#   name        stack name (label only)
+#   dir         directory holding compose.yml
+#   template    role template rendered to <dir>/compose.yml
+#   config_dir  optional bind-mounted config dir, created with owner/group
+#   owner/group ownership for config_dir
+#   extra_dirs  optional additional dirs (path + optional owner/group)
+# Per-stack settings come from the service variables in group_vars; override
+# this list there to add or remove stacks.
+compose_stacks:
+  - name: dockge
+    dir: "{{ dockge_data_dir }}"
+    template: dockge/compose.yml.j2
+    extra_dirs:
+      - path: "{{ dockge_stacks_dir }}"
+  - name: emby
+    dir: "{{ dockge_stacks_dir }}/emby"
+    template: emby/compose.yml.j2
+    config_dir: "{{ emby_config_dir }}"
+    owner: "{{ emby_uid }}"
+    group: "{{ emby_gid }}"
+    extra_dirs:
+      - path: "{{ emby_transcode_dir }}"
+        owner: "{{ emby_uid }}"
+        group: "{{ emby_gid }}"
+  - name: speedtest-tracker
+    dir: "{{ dockge_stacks_dir }}/speedtest-tracker"
+    template: speedtest-tracker/compose.yml.j2
+    config_dir: "{{ speedtest_config_dir }}"
+    owner: "{{ speedtest_puid }}"
+    group: "{{ speedtest_pgid }}"
+  - name: qbittorrent
+    dir: "{{ dockge_stacks_dir }}/qbittorrent"
+    template: qbittorrent/compose.yml.j2
+    config_dir: "{{ qbittorrent_config_dir }}"
+    owner: "{{ qbittorrent_puid }}"
+    group: "{{ qbittorrent_pgid }}"
+    extra_dirs:
+      - path: "{{ qbittorrent_incomplete_dir }}"
+        owner: "{{ qbittorrent_puid }}"
+        group: "{{ qbittorrent_pgid }}"

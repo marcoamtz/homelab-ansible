@@ -6,6 +6,7 @@ inventory.ini
 # Ansible
 *.retry
 *.vault.yml
+.ansible/
 
 # Secrets & keys
 .env

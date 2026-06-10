@@ -1,0 +1,4 @@
+---
+- name: Restart docker
+  ansible.builtin.command: systemctl restart docker
+  changed_when: true

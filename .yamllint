@@ -1,0 +1,23 @@
+---
+extends: default
+
+ignore: |
+  .ansible/
+  .git/
+  .memsearch/
+
+rules:
+  line-length:
+    max: 160
+  truthy:
+    allowed-values: ["true", "false"]
+  # Keep the repo's existing `{ key: value }` inline-dict style
+  braces:
+    max-spaces-inside: 1
+  # Keys below match what ansible-lint's bundled yamllint config requires
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true

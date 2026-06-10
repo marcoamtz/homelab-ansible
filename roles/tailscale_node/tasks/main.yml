@@ -1,0 +1,88 @@
+---
+# WARNING: Pipes a remote script to shell as root. This is Tailscale's official
+# install method, but carries inherent supply-chain risk.
+- name: Bootstrap Tailscale CLI
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://tailscale.com/install.sh | sh
+  args:
+    creates: /usr/bin/tailscale
+    executable: /bin/bash
+  tags: [install]
+
+- name: Deploy forwarding sysctl drop-in
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: sysctl_dropin
+  vars:
+    sysctl_dropin_file: /etc/sysctl.d/99-tailscale.conf
+    sysctl_dropin_content: |
+      net.ipv4.ip_forward=1
+      net.ipv6.conf.all.forwarding=1
+      net.ipv6.conf.all.accept_ra=2
+      net.ipv6.conf.eth0.accept_ra=2
+
+# Also re-add the static ULA: Proxmox regenerates the container network from
+# its CT config (ip6=auto) on restart, so the runtime-assigned ULA below
+# would otherwise vanish until the next playbook run, breaking the advertised
+# IPv6 subnet route.
+- name: Re-apply forwarding and ULA on boot
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: sysctl_reboot_cron
+  vars:
+    sysctl_cron_name: sysctl-forwarding
+    sysctl_cron_file: /etc/sysctl.d/99-tailscale.conf
+    sysctl_cron_extra: "( /sbin/ip -6 addr add {{ ula_address }} dev eth0 2>/dev/null || true ) && /usr/bin/rdisc6 -1 eth0"
+
+# Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
+- name: Assign static ULA address
+  ansible.builtin.command: ip -6 addr add {{ ula_address }} dev eth0
+  register: ula_result
+  changed_when: >
+    ula_result.rc == 0 and
+    'RTNETLINK answers: File exists' not in ula_result.stderr and
+    'address already assigned' not in ula_result.stderr
+  failed_when: >
+    ula_result.rc != 0 and
+    'RTNETLINK answers: File exists' not in ula_result.stderr and
+    'address already assigned' not in ula_result.stderr
+  tags: [config]
+
+- name: Enable Tailscale service
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: systemd_enable
+  vars:
+    systemd_unit: tailscaled
+
+- name: Check Tailscale status
+  ansible.builtin.command: tailscale status
+  register: ts_status
+  changed_when: false
+  failed_when: false
+  tags: [service]
+
+- name: Authenticate Tailscale
+  ansible.builtin.command: tailscale up --authkey={{ tailscale_auth_key }}
+  when: ts_status.rc != 0
+  changed_when: true
+  no_log: true
+  tags: [service]
+
+- name: Apply Tailscale settings
+  ansible.builtin.command: tailscale set {{ tailscale_args }}
+  changed_when: false
+  tags: [service]
+
+- name: Verify Tailscale IPv4 connectivity
+  ansible.builtin.command: tailscale ip -4
+  register: ts_ip4
+  changed_when: false
+  tags: [validate]
+
+- name: Verify Tailscale IPv6 connectivity
+  ansible.builtin.command: tailscale ip -6
+  register: ts_ip6
+  changed_when: false
+  tags: [validate]

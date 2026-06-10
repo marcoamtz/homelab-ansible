@@ -1,0 +1,3 @@
+---
+# ZFS pool that gets the weekly TRIM timer.
+zfs_trim_pool: tank

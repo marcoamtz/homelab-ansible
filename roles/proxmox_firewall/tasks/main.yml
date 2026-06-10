@@ -1,0 +1,53 @@
+---
+- name: Assert target is a Debian-family system
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] == "Debian"
+    fail_msg: "Proxmox VE hosts are Debian-based — refusing to run against anything else"
+    quiet: true
+  tags: [always]
+
+# pmxcfs (/etc/pve) does not support atomic file replacements. Ansible's
+# template module fails on new files because it cannot rename temp files.
+# Pre-create empty files so template only needs to overwrite in place.
+- name: Ensure firewall config files exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: touch
+    mode: "0640"
+    modification_time: preserve
+    access_time: preserve
+  loop:
+    - /etc/pve/firewall/cluster.fw
+    - "/etc/pve/firewall/{{ dns_ctid }}.fw"
+    - "/etc/pve/firewall/{{ tailscale_ctid }}.fw"
+    - "/etc/pve/firewall/{{ docker_ctid }}.fw"
+  tags: [firewall, config]
+
+- name: Deploy firewall configs
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: www-data
+    mode: "0640"
+  loop:
+    - { src: cluster.fw.j2, dest: /etc/pve/firewall/cluster.fw }
+    - { src: ct-dns.fw.j2, dest: "/etc/pve/firewall/{{ dns_ctid }}.fw" }
+    - { src: ct-tailscale.fw.j2, dest: "/etc/pve/firewall/{{ tailscale_ctid }}.fw" }
+    - { src: ct-docker.fw.j2, dest: "/etc/pve/firewall/{{ docker_ctid }}.fw" }
+  loop_control:
+    label: "{{ item.dest }}"
+  tags: [firewall, config]
+
+# Bad rules silently no-op otherwise — compile fails loudly on syntax errors.
+- name: Validate compiled firewall ruleset
+  ansible.builtin.command: pve-firewall compile
+  changed_when: false
+  tags: [firewall, validate]
+
+- name: Verify firewall is active
+  ansible.builtin.command: pve-firewall status
+  register: pve_fw_status
+  changed_when: false
+  failed_when: "'Status: enabled/running' not in pve_fw_status.stdout"
+  tags: [firewall, validate]

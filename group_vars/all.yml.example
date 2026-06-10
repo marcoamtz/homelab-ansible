@@ -3,6 +3,7 @@
 mail_host: "smtp.gmail.com"
 mail_port: "465"
 mail_username: "you@example.com"
+# Encrypt with: ansible-vault encrypt_string 'YOUR_APP_PASSWORD' --name 'mail_password'
 mail_password: "your-app-password"
 mail_from: "you@example.com"
 mail_to: "you@example.com"

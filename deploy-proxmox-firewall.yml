@@ -1,35 +1,7 @@
 ---
 - name: Deploy Proxmox Firewall Configuration
   hosts: proxmox_hosts
-  become: yes
+  become: true
 
-  tasks:
-    # pmxcfs (/etc/pve) does not support atomic file replacements. Ansible's
-    # template module fails on new files because it cannot rename temp files.
-    # Pre-create empty files so template only needs to overwrite in place.
-    - name: Ensure firewall config files exist
-      file:
-        path: "{{ item }}"
-        state: touch
-        modification_time: preserve
-        access_time: preserve
-      loop:
-        - /etc/pve/firewall/cluster.fw
-        - "/etc/pve/firewall/{{ dns_ctid }}.fw"
-        - "/etc/pve/firewall/{{ tailscale_ctid }}.fw"
-        - "/etc/pve/firewall/{{ docker_ctid }}.fw"
-
-    - name: Deploy firewall configs
-      template:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
-        owner: root
-        group: www-data
-        mode: "0640"
-      loop:
-        - { src: proxmox/firewall/cluster.fw.j2, dest: /etc/pve/firewall/cluster.fw }
-        - { src: proxmox/firewall/ct-dns.fw.j2, dest: "/etc/pve/firewall/{{ dns_ctid }}.fw" }
-        - { src: proxmox/firewall/ct-tailscale.fw.j2, dest: "/etc/pve/firewall/{{ tailscale_ctid }}.fw" }
-        - { src: proxmox/firewall/ct-docker.fw.j2, dest: "/etc/pve/firewall/{{ docker_ctid }}.fw" }
-      loop_control:
-        label: "{{ item.dest }}"
+  roles:
+    - proxmox_firewall
