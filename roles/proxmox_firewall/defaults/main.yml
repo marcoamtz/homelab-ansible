@@ -1,0 +1,4 @@
+---
+# Tailscale's CGNAT IPv4 range and IPv6 ULA block — vendor-defined, stable.
+tailscale_ipv4_cidr: 100.64.0.0/10
+tailscale_ipv6_cidr: fd7a:115c:a1e0::/48

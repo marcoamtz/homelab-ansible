@@ -1,0 +1,123 @@
+---
+- name: Assert ipv6_prefix covers exactly a /64
+  ansible.builtin.assert:
+    that: ipv6_prefix.split(':') | length == 4
+    fail_msg: >-
+      ipv6_prefix must be the first 4 hextets of a /64 (e.g. 'fd00:0:0:1') —
+      the reverse-zone derivation in 06-rfc6761.conf.j2 assumes it
+    quiet: true
+  tags: [always]
+
+# WARNING: Pipes a remote script to shell as root. This is NextDNS's official
+# install method, but carries inherent supply-chain risk. Pin to the apt repo
+# if NextDNS publishes a stable signing key + source list.
+- name: Bootstrap NextDNS CLI
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -sL https://nextdns.io/install | sh -s -- -id {{ nextdns_id }} -setup-router=false < /dev/null
+  args:
+    creates: /usr/bin/nextdns
+    executable: /bin/bash
+  no_log: true
+  notify: Reload systemd
+  tags: [install]
+
+- name: Ensure dnsmasq.d directory exists
+  ansible.builtin.file:
+    path: /etc/dnsmasq.d
+    state: directory
+    mode: "0755"
+  tags: [config]
+
+- name: Deploy dnsmasq configurations
+  ansible.builtin.template:
+    src: "dnsmasq.d/{{ item }}.j2"
+    dest: "/etc/dnsmasq.d/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ dnsmasq_configs }}"
+  notify: Restart dnsmasq
+  tags: [config]
+
+- name: Find unmanaged dnsmasq configs
+  ansible.builtin.find:
+    paths: /etc/dnsmasq.d
+    patterns: "*.conf"
+  register: existing_configs
+  tags: [config]
+
+- name: Remove stale dnsmasq configs
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ existing_configs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: item.path | basename not in dnsmasq_configs
+  notify: Restart dnsmasq
+  tags: [config]
+
+- name: Deploy NextDNS configuration
+  ansible.builtin.template:
+    src: nextdns.conf.j2
+    dest: /etc/nextdns.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nextdns
+  tags: [config]
+
+- name: Fix LXC resolv.conf and prevent Proxmox overwrite
+  ansible.builtin.copy:
+    content: "nameserver 127.0.0.1\n"
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [config]
+
+- name: Create Proxmox resolv.conf ignore marker
+  ansible.builtin.copy:
+    content: ""
+    dest: /etc/.pve-ignore.resolv.conf
+    mode: "0644"
+    force: false
+  tags: [config]
+
+- name: Enable NextDNS service
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: systemd_enable
+  vars:
+    systemd_unit: nextdns
+
+- name: Enable dnsmasq service
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: systemd_enable
+  vars:
+    systemd_unit: dnsmasq
+
+# --- IPv6 DNS reset monitoring ---
+- name: Deploy IPv6 DNS check script
+  ansible.builtin.template:
+    src: check-ipv6-dns.sh.j2
+    dest: /usr/local/bin/check-ipv6-dns.sh
+    owner: root
+    group: root
+    mode: "0755"
+  tags: [config]
+
+- name: Schedule IPv6 DNS check
+  ansible.builtin.cron:
+    name: check-ipv6-dns
+    minute: "{{ dns_ipv6_check_minute }}"
+    job: /usr/local/bin/check-ipv6-dns.sh
+  tags: [config]
+
+- name: Verify DNS resolution works
+  ansible.builtin.command: dig +short +time=5 google.com @127.0.0.1
+  register: dns_check
+  changed_when: false
+  tags: [validate]

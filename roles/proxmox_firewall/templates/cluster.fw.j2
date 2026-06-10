@@ -11,8 +11,8 @@ fe80::/10
 
 [IPSET tailscale_net]
 
-100.64.0.0/10
-fd7a:115c:a1e0::/48
+{{ tailscale_ipv4_cidr }}
+{{ tailscale_ipv6_cidr }}
 
 [group dns_dhcp_services] # Rules for NextDNS and dnsmasq
 

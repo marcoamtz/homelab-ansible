@@ -1,0 +1,19 @@
+---
+dnsmasq_configs:
+  - 01-base.conf
+  - 02-dhcp.conf
+  - 06-rfc6761.conf
+
+# dnsmasq performance tunables (rendered into dnsmasq.d/01-base.conf)
+dnsmasq_cache_size: 10000
+dnsmasq_forward_max: 350
+dnsmasq_min_cache_ttl: 300
+dnsmasq_max_cache_ttl: 3600
+
+# NextDNS CLI cache (rendered into nextdns.conf)
+nextdns_cache_size: 10MB
+
+# Cadence for the ISP TR-069 IPv6 DNS reset detector. The reset persists
+# until the router is manually fixed, so 15 min detection latency loses
+# nothing over 5.
+dns_ipv6_check_minute: "*/15"

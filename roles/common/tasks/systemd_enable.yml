@@ -1,0 +1,9 @@
+---
+# Shared via import_role tasks_from. Caller sets `systemd_unit`.
+# Uses systemctl directly — the Ansible systemd module fails to enumerate
+# services inside Proxmox LXC containers (see docs/architecture.md).
+- name: Enable and start {{ systemd_unit }}
+  ansible.builtin.command: systemctl enable --now {{ systemd_unit }}
+  register: systemd_enable_result
+  changed_when: "'Created symlink' in systemd_enable_result.stderr"
+  tags: [service]

@@ -1,0 +1,7 @@
+---
+- name: Install base system packages
+  ansible.builtin.apt:
+    name: "{{ common_base_packages + common_extra_packages }}"
+    state: present
+    update_cache: true
+  tags: [install]

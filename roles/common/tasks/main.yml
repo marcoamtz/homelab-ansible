@@ -1,0 +1,18 @@
+---
+- name: Assert target is a Debian-family system
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] == "Debian"
+    fail_msg: "These roles manage apt and systemctl directly — only Debian-family targets are supported"
+    quiet: true
+  tags: [always]
+
+- name: Install base packages
+  ansible.builtin.import_tasks: base_packages.yml
+
+- name: Configure locale
+  ansible.builtin.import_tasks: locale.yml
+  when: common_manage_locale
+
+- name: Configure msmtp mailer
+  ansible.builtin.import_tasks: install_msmtp.yml
+  when: common_enable_msmtp

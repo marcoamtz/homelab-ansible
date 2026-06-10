@@ -1,0 +1,11 @@
+---
+# Shared via import_role tasks_from. Caller sets `sysctl_cron_name` and
+# `sysctl_cron_file`; `sysctl_cron_extra` appends additional commands.
+# LXC containers do not reliably re-apply sysctl.d at boot, so a @reboot
+# cron re-applies the drop-in (see docs/architecture.md).
+- name: Re-apply sysctl on boot via {{ sysctl_cron_name }}
+  ansible.builtin.cron:
+    name: "{{ sysctl_cron_name }}"
+    special_time: reboot
+    job: "/sbin/sysctl -p {{ sysctl_cron_file }}{% if sysctl_cron_extra is defined %} && {{ sysctl_cron_extra }}{% endif %}"
+  tags: [config]

@@ -1,0 +1,97 @@
+---
+- name: Create stack directories
+  ansible.builtin.file:
+    path: "{{ item.dir }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ compose_stacks }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: [config]
+
+# Leaf-dir ownership only — the container manages files inside with its
+# PUID/PGID. A recurse here would walk thousands of qBittorrent state files
+# on every run; use --tags fix-permissions for a one-shot recursive reset.
+- name: Create config directories with service ownership
+  ansible.builtin.file:
+    path: "{{ item.config_dir }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "0755"
+  loop: "{{ compose_stacks }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.config_dir is defined
+  tags: [config]
+
+- name: Create service data directories
+  ansible.builtin.file:
+    path: "{{ item.1.path }}"
+    state: directory
+    owner: "{{ item.1.owner | default(omit) }}"
+    group: "{{ item.1.group | default(omit) }}"
+    mode: "0755"
+  loop: "{{ compose_stacks | subelements('extra_dirs', skip_missing=true) }}"
+  loop_control:
+    label: "{{ item.1.path }}"
+  tags: [config]
+
+- name: Recursively reset config directory ownership (opt-in)
+  ansible.builtin.file:
+    path: "{{ item.config_dir }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    recurse: true
+  loop: "{{ compose_stacks | selectattr('config_dir', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: [never, fix-permissions]
+
+- name: Render compose files
+  ansible.builtin.template:
+    src: "{{ item.template }}"
+    dest: "{{ item.dir }}/compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ compose_stacks }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: [config]
+
+# The module reconciles against the rendered compose file — containers are
+# only recreated when the file actually changed, so no restart handlers.
+- name: Start compose stacks
+  community.docker.docker_compose_v2:
+    project_src: "{{ item.dir }}"
+    state: present
+  loop: "{{ compose_stacks }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: compose_results
+  tags: [service]
+
+- name: Verify stack containers are running
+  ansible.builtin.assert:
+    that: item.containers | selectattr('State', 'ne', 'running') | list | length == 0
+    fail_msg: "Stack {{ item.item.name }} has non-running containers"
+    quiet: true
+  loop: "{{ compose_results.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  # containers is absent in --check mode, where nothing was started
+  when:
+    - compose_results.results is defined
+    - item.containers is defined
+  tags: [service]
+
+- name: Verify Dockge is reachable
+  ansible.builtin.command: curl -sf http://localhost:{{ dockge_port }}
+  register: dockge_check
+  changed_when: false
+  until: dockge_check.rc == 0
+  retries: 3
+  delay: 5
+  tags: [validate]

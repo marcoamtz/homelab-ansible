@@ -3,6 +3,6 @@ profile {{ nextdns_id }}
 listen :{{ nextdns_listen_port }}
 report-client-info true
 log-queries true
-cache-size 10MB
+cache-size {{ nextdns_cache_size }}
 setup-router false
 auto-activate false
