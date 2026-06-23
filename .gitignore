@@ -24,3 +24,4 @@ secrets/
 entities.json
 mempalace.yaml
 .memsearch/
+.memsearch.toml
