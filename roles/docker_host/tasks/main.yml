@@ -88,13 +88,13 @@
     sysctl_cron_file: /etc/sysctl.d/99-docker-ra.conf
     sysctl_cron_extra: /usr/bin/rdisc6 -1 eth0
 
-- name: Monthly Docker image cleanup
+- name: Weekly Docker image cleanup
   ansible.builtin.cron:
     name: docker-image-prune
-    day: "1"
+    weekday: "0"
     hour: "3"
     minute: "0"
-    job: docker image prune -af --filter 'until=720h' > /dev/null 2>&1
+    job: docker image prune -af --filter 'until=360h' > /dev/null 2>&1
   tags: [config]
 
 - name: Enable Docker service
