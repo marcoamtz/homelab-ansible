@@ -1,6 +1,6 @@
 services:
   emby:
-    image: emby/embyserver:latest
+    image: emby/embyserver:beta
     restart: unless-stopped
     ports:
       - "{{ emby_port_http }}:8096"
