@@ -1,10 +1,8 @@
 ---
 - name: Assert target is a Debian-family system
-  ansible.builtin.assert:
-    that: ansible_facts['os_family'] == "Debian"
-    fail_msg: "Proxmox VE hosts are Debian-based — refusing to run against anything else"
-    quiet: true
-  tags: [always]
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: assert_debian
 
 # pmxcfs (/etc/pve) does not support atomic file replacements. Ansible's
 # template module fails on new files because it cannot rename temp files.
@@ -16,11 +14,7 @@
     mode: "0640"
     modification_time: preserve
     access_time: preserve
-  loop:
-    - /etc/pve/firewall/cluster.fw
-    - "/etc/pve/firewall/{{ dns_ctid }}.fw"
-    - "/etc/pve/firewall/{{ tailscale_ctid }}.fw"
-    - "/etc/pve/firewall/{{ docker_ctid }}.fw"
+  loop: "{{ proxmox_firewall_configs | map(attribute='dest') | list }}"
   tags: [firewall, config]
 
 - name: Deploy firewall configs
@@ -30,11 +24,7 @@
     owner: root
     group: www-data
     mode: "0640"
-  loop:
-    - { src: cluster.fw.j2, dest: /etc/pve/firewall/cluster.fw }
-    - { src: ct-dns.fw.j2, dest: "/etc/pve/firewall/{{ dns_ctid }}.fw" }
-    - { src: ct-tailscale.fw.j2, dest: "/etc/pve/firewall/{{ tailscale_ctid }}.fw" }
-    - { src: ct-docker.fw.j2, dest: "/etc/pve/firewall/{{ docker_ctid }}.fw" }
+  loop: "{{ proxmox_firewall_configs }}"
   loop_control:
     label: "{{ item.dest }}"
   tags: [firewall, config]

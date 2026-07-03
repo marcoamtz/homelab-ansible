@@ -4,11 +4,7 @@ enable: 1
 ipfilter: 1
 radv: 1
 
-[IPSET ipfilter-net0] # Allowed source IPs for net0
-
-{% for prefix in ipfilter_v6_prefixes %}
-{{ prefix }}
-{% endfor %}
+{% include '_ipfilter-net0.j2' %}
 
 [RULES]
 

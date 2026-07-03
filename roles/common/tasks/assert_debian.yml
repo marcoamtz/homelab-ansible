@@ -1,0 +1,11 @@
+---
+# Shared via import_role tasks_from. Every role here manages apt and
+# systemctl directly, so anything non-Debian is refused up front.
+- name: Assert target is a Debian-family system
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] == "Debian"
+    fail_msg: >-
+      Unsupported os_family '{{ ansible_facts['os_family'] }}' — these roles
+      manage apt and systemctl directly; only Debian-family targets are supported
+    quiet: true
+  tags: [always]

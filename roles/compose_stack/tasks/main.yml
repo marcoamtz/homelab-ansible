@@ -19,10 +19,9 @@
     owner: "{{ item.owner }}"
     group: "{{ item.group }}"
     mode: "0755"
-  loop: "{{ compose_stacks }}"
+  loop: "{{ compose_stacks | selectattr('config_dir', 'defined') | list }}"
   loop_control:
     label: "{{ item.name }}"
-  when: item.config_dir is defined
   tags: [config]
 
 - name: Create service data directories
