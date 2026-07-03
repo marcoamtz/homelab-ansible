@@ -2,3 +2,11 @@
 # Tailscale's CGNAT IPv4 range and IPv6 ULA block — vendor-defined, stable.
 tailscale_ipv4_cidr: 100.64.0.0/10
 tailscale_ipv6_cidr: fd7a:115c:a1e0::/48
+
+# Single source of truth for firewall config files — the pre-create (touch)
+# and template loops in tasks/main.yml both derive from this list.
+proxmox_firewall_configs:
+  - { src: cluster.fw.j2, dest: /etc/pve/firewall/cluster.fw }
+  - { src: ct-dns.fw.j2, dest: "/etc/pve/firewall/{{ dns_ctid }}.fw" }
+  - { src: ct-tailscale.fw.j2, dest: "/etc/pve/firewall/{{ tailscale_ctid }}.fw" }
+  - { src: ct-docker.fw.j2, dest: "/etc/pve/firewall/{{ docker_ctid }}.fw" }

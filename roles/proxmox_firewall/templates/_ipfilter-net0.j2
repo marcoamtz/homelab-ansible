@@ -1,0 +1,5 @@
+[IPSET ipfilter-net0] # Allowed source IPs for net0
+
+{% for prefix in ipfilter_v6_prefixes %}
+{{ prefix }}
+{% endfor %}

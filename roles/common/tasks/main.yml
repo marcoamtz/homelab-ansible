@@ -1,10 +1,6 @@
 ---
 - name: Assert target is a Debian-family system
-  ansible.builtin.assert:
-    that: ansible_facts['os_family'] == "Debian"
-    fail_msg: "These roles manage apt and systemctl directly — only Debian-family targets are supported"
-    quiet: true
-  tags: [always]
+  ansible.builtin.import_tasks: assert_debian.yml
 
 - name: Install base packages
   ansible.builtin.import_tasks: base_packages.yml

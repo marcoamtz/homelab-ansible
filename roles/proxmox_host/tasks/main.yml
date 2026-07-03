@@ -1,10 +1,8 @@
 ---
 - name: Assert target is a Debian-family system
-  ansible.builtin.assert:
-    that: ansible_facts['os_family'] == "Debian"
-    fail_msg: "Proxmox VE hosts are Debian-based — refusing to run against anything else"
-    quiet: true
-  tags: [always]
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: assert_debian
 
 # GPU passthrough for unprivileged LXC containers requires world-readable
 # /dev/dri devices. Without this, the UID mapping makes the render device

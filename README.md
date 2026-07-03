@@ -250,7 +250,7 @@ group_vars/
   tailscale_nodes.yml.example      # Example Tailscale variables
 roles/
   common/                          # Base packages, locale, msmtp, shared LXC plumbing
-    tasks/                         #   systemd_enable, sysctl_dropin, sysctl_reboot_cron
+    tasks/                         #   assert_debian, systemd_enable, sysctl_dropin, sysctl_reboot_cron
     templates/msmtprc.j2           #   SMTP client config for email alerts
   dns_server/                      # NextDNS + dnsmasq + IPv6 DNS reset monitoring
     templates/dnsmasq.d/           #   base config, DHCP, RFC 6761 special domains
