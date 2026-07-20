@@ -7,6 +7,11 @@ tailscale-bridge ansible_host=192.168.1.211
 [docker_hosts]
 docker-server ansible_host=192.168.1.212
 
+[lxc_containers:children]
+dns_servers
+tailscale_nodes
+docker_hosts
+
 [proxmox_hosts]
 proxmox ansible_host=192.168.1.200
 

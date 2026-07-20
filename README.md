@@ -72,6 +72,8 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 ### `update-all.yml` — Package Updates
 
 Runs `apt dist-upgrade` on all LXC containers and shows which packages were upgraded.
+Downloaded package files are not retained, existing package caches are cleaned, and
+unused dependency packages are removed after upgrades.
 No reboot handling on purpose: LXC containers share the host kernel, so container
 upgrades never require one.
 

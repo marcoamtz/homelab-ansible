@@ -2,6 +2,9 @@
 - name: Assert target is a Debian-family system
   ansible.builtin.import_tasks: assert_debian.yml
 
+- name: Configure apt package caching
+  ansible.builtin.import_tasks: apt_cache.yml
+
 - name: Install base packages
   ansible.builtin.import_tasks: base_packages.yml
 

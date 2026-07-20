@@ -2,8 +2,14 @@
 # No reboot handling on purpose — LXC containers share the host kernel, so
 # dist-upgrade inside a container never requires a container reboot.
 - name: Update all LXC containers
-  hosts: dns_servers,tailscale_nodes,docker_hosts
+  hosts: lxc_containers
   become: true
+
+  pre_tasks:
+    - name: Configure apt package caching
+      ansible.builtin.import_role:
+        name: common
+        tasks_from: apt_cache
 
   tasks:
     - name: Update and upgrade packages
@@ -21,3 +27,4 @@
       ansible.builtin.apt:
         autoremove: true
         purge: true
+      tags: [cleanup]

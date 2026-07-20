@@ -1,0 +1,30 @@
+---
+# apt(8) already discards downloaded packages by default; the global option
+# also applies that behavior to apt-get and other APT frontends.
+- name: Disable retention of downloaded apt packages
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/99no-cache
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible.
+      APT::Keep-Downloaded-Packages "false";
+      Binary::apt::APT::Keep-Downloaded-Packages "false";
+  tags: [config]
+
+- name: Find cached apt packages
+  ansible.builtin.find:
+    paths: /var/cache/apt/archives
+    patterns: "*.deb"
+    file_type: file
+    recurse: true
+  register: common_apt_cached_packages
+  changed_when: false
+  tags: [config, cleanup]
+
+- name: Clean apt package cache
+  ansible.builtin.apt:
+    clean: true
+  when: common_apt_cached_packages.matched > 0
+  tags: [config, cleanup]
