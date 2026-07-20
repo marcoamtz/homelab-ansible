@@ -54,7 +54,7 @@ mode `0640` matches what pmxcfs enforces.
 On Proxmox boot, `pvestatd` (which mounts NFS storage) races
 `pve-guests.service` (which starts containers). An LXC bind mount (`mp:`)
 captures whatever is at the host path at start time — an empty directory if
-NFS isn't mounted yet — which poisons qBittorrent state and Emby libraries.
+NFS isn't mounted yet — which poisons qBittorrent state and Jellyfin libraries.
 `wait-for-nfs.sh` is wired as a `pct` hookscript and blocks container start
 until the listed NFS paths are mounted, failing the start (loudly) on
 timeout instead of booting with empty mounts.

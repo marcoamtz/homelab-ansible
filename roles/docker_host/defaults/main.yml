@@ -1,5 +1,6 @@
 ---
 # Mountpoint of the fast ZFS scratch dataset (bind-mounted from the Proxmox
-# host). qbittorrent_incomplete_dir and emby_transcode_dir must live under it;
-# if it is not mounted, those dirs would silently land on the LXC root disk.
+# host). qbittorrent_incomplete_dir, jellyfin_cache_dir, and
+# jellyfin_transcode_dir must live under it; if it is not mounted, those dirs
+# would silently land on the LXC root disk.
 docker_tank_mount: /mnt/tank

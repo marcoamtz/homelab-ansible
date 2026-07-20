@@ -11,8 +11,8 @@ mail_to: "you@example.com"
 # Shared service ports — used by both Docker compose templates and Proxmox firewall rules.
 # Define once here to avoid desync between container binds and firewall allows.
 dockge_port: 5001
-emby_port_http: 8096
-emby_port_https: 8920
+jellyfin_port_http: 8096
+jellyfin_port_https: 8920
 speedtest_port: 8088
 qbittorrent_port_webui: 8080
 qbittorrent_port_torrent: 6881

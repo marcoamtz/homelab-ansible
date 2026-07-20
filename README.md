@@ -44,7 +44,7 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 
 - Docker CE installed via official apt repository
 - Dockge as compose stack management UI
-- Emby media server with Intel Quick Sync hardware transcoding
+- Jellyfin media server with Intel Quick Sync hardware transcoding
 - Speedtest Tracker for internet speed monitoring
 - qBittorrent torrent client with split storage (incomplete on NVMe, complete on NFS)
 - Dual-stack IPv4/IPv6 networking with SLAAC for incoming IPv6 peer connections
@@ -128,21 +128,22 @@ upgrades never require one.
 6. Edit `group_vars/all.yml` with shared settings:
    - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from`, `mail_to` — SMTP settings for email notifications (DNS alerts + Speedtest); 🔒 vault-encrypt `mail_password`
    - `dockge_port` — Dockge web UI port (default: 5001)
-   - `emby_port_http`, `emby_port_https` — Emby ports (default: 8096, 8920)
+   - `jellyfin_port_http`, `jellyfin_port_https` — Jellyfin ports (default: 8096, 8920)
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
    - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
 
 7. Edit `group_vars/docker_hosts.yml` with your Docker settings:
-   - `emby_uid`, `emby_gid` — file ownership for Emby media access
+   - `jellyfin_uid`, `jellyfin_gid` — container UID/GID for Jellyfin media access
    - `speedtest_url` — IP or hostname for Speedtest Tracker's APP_URL
    - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/)); 🔒 vault-encrypt
    - `speedtest_schedule` — cron schedule for speed tests
    - `speedtest_servers` — comma-separated Ookla server IDs
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
-   - `nas_media_path` — bind mount path for Emby media library (Synology NFS)
+   - `nas_media_path` — bind mount path for Jellyfin media libraries (Synology NFS)
    - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
    - `qbittorrent_incomplete_dir` — path for active downloads (ZFS bind mount)
-   - `emby_transcode_dir` — path for Emby transcoding temp files (ZFS bind mount)
+   - `jellyfin_cache_dir` — path for Jellyfin cache data (ZFS bind mount)
+   - `jellyfin_transcode_dir` — path for Jellyfin transcoding temp files (ZFS bind mount)
    - `docker_timezone` — timezone for all containers
    - `docker_ipv6_cidr` — ULA subnet for Docker's default bridge network
    - `docker_ipv6_pool` — ULA pool for Docker Compose networks
@@ -260,7 +261,7 @@ roles/
   docker_host/                     # Docker CE via deb822 repo, daemon.json, IPv6 RA
     templates/daemon.json.j2       #   Docker daemon config (IPv6, ip6tables)
   compose_stack/                   # Data-driven compose stacks (see defaults/main.yml)
-    templates/                     #   dockge, emby, speedtest-tracker, qbittorrent
+    templates/                     #   dockge, jellyfin, speedtest-tracker, qbittorrent
   proxmox_host/                    # GPU passthrough, TRIM timers, NFS pre-start hook
     templates/wait-for-nfs.sh.j2   #   CT pre-start hook: block boot until NFS mounted
   proxmox_firewall/                # Cluster + per-CT firewall configs

@@ -6,24 +6,32 @@
 #   config_dir  optional bind-mounted config dir, created with owner/group
 #   owner/group ownership for config_dir
 #   extra_dirs  optional additional dirs (path + optional owner/group)
+#   health_url  optional endpoint checked after startup
+#   health_retries optional retry override for slower-starting services
 # Per-stack settings come from the service variables in group_vars; override
 # this list there to add or remove stacks.
 compose_stacks:
   - name: dockge
     dir: "{{ dockge_data_dir }}"
     template: dockge/compose.yml.j2
+    health_url: "http://localhost:{{ dockge_port }}"
     extra_dirs:
       - path: "{{ dockge_stacks_dir }}"
-  - name: emby
-    dir: "{{ dockge_stacks_dir }}/emby"
-    template: emby/compose.yml.j2
-    config_dir: "{{ emby_config_dir }}"
-    owner: "{{ emby_uid }}"
-    group: "{{ emby_gid }}"
+  - name: jellyfin
+    dir: "{{ dockge_stacks_dir }}/jellyfin"
+    template: jellyfin/compose.yml.j2
+    health_url: "http://localhost:{{ jellyfin_port_http }}/health"
+    health_retries: 12
+    config_dir: "{{ jellyfin_config_dir }}"
+    owner: "{{ jellyfin_uid }}"
+    group: "{{ jellyfin_gid }}"
     extra_dirs:
-      - path: "{{ emby_transcode_dir }}"
-        owner: "{{ emby_uid }}"
-        group: "{{ emby_gid }}"
+      - path: "{{ jellyfin_cache_dir }}"
+        owner: "{{ jellyfin_uid }}"
+        group: "{{ jellyfin_gid }}"
+      - path: "{{ jellyfin_transcode_dir }}"
+        owner: "{{ jellyfin_uid }}"
+        group: "{{ jellyfin_gid }}"
   - name: speedtest-tracker
     dir: "{{ dockge_stacks_dir }}/speedtest-tracker"
     template: speedtest-tracker/compose.yml.j2

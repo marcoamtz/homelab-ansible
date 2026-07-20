@@ -82,7 +82,7 @@
 - name: Verify GPU device is world-readable
   ansible.builtin.assert:
     that: gpu_render_device_after.stat.mode == "0666"
-    fail_msg: "/dev/dri/renderD128 is not 0666 — Emby hardware transcoding will fail inside the LXC"
+    fail_msg: "/dev/dri/renderD128 is not 0666 — Jellyfin hardware transcoding will fail inside the LXC"
     quiet: true
   when: gpu_render_device.stat.exists
   tags: [validate]
