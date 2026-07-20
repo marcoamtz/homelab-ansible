@@ -1,0 +1,17 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    restart: unless-stopped
+    user: "{{ jellyfin_uid }}:{{ jellyfin_gid }}"
+    ports:
+      - "{{ jellyfin_port_http }}:8096"
+      - "{{ jellyfin_port_https }}:8920"
+    volumes:
+      - "{{ jellyfin_config_dir }}:/config"
+      - "{{ jellyfin_cache_dir }}:/cache"
+      - "{{ jellyfin_media_dir }}:/mnt/media:rslave"
+      - "{{ jellyfin_transcode_dir }}:/cache/transcodes"
+    environment:
+      TZ: "{{ docker_timezone }}"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128

@@ -86,11 +86,14 @@
     - item.containers is defined
   tags: [service]
 
-- name: Verify Dockge is reachable
-  ansible.builtin.command: curl -sf http://localhost:{{ dockge_port }}
-  register: dockge_check
+- name: Verify stack endpoints are reachable
+  ansible.builtin.command: "curl -sf {{ item.health_url }}"
+  register: stack_health_check
   changed_when: false
-  until: dockge_check.rc == 0
-  retries: 3
+  until: stack_health_check.rc == 0
+  retries: "{{ item.health_retries | default(3) }}"
   delay: 5
+  loop: "{{ compose_stacks | selectattr('health_url', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
   tags: [validate]

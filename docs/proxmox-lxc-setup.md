@@ -203,8 +203,8 @@ Create an unprivileged Debian LXC container with the following settings:
 
 The root disk (16G) holds Docker images, container configs, and Dockge data. Large or fast-changing data uses separate mounts:
 
-- **`mp0:` — Fast NVMe scratch space** — A separate ZFS dataset on `tank` for qBittorrent incomplete downloads and Emby transcoding temp. Uses the fast NVMe and is not limited by the root disk size.
-- **`mp1:` — Synology NFS (media)** — Bind mount from the Proxmox host's NFS mount for the Emby media library.
+- **`mp0:` — Fast NVMe scratch space** — A separate ZFS dataset on `tank` for qBittorrent incomplete downloads and Jellyfin cache/transcoding temp. Uses the fast NVMe and is not limited by the root disk size.
+- **`mp1:` — Synology NFS (media)** — Bind mount from the Proxmox host's NFS mount for the Jellyfin media libraries.
 - **`mp2:` — Synology NFS (complete)** — Bind mount from the Proxmox host's NFS mount for qBittorrent completed downloads.
 
 Create the ZFS dataset on the Proxmox host and fix ownership for the unprivileged container (UID 0 inside maps to 100000 on the host):
@@ -222,11 +222,11 @@ mp1: <PROXMOX_NFS_MEDIA_PATH>,mp=/mnt/nas/media
 mp2: <PROXMOX_NFS_COMPLETE_PATH>,mp=/mnt/nas/complete
 ```
 
-Where `<PROXMOX_NFS_MEDIA_PATH>` and `<PROXMOX_NFS_COMPLETE_PATH>` are the Synology NFS mounts on the Proxmox host. The mount points must match `qbittorrent_incomplete_dir`, `emby_transcode_dir`, `nas_media_path`, and `nas_complete_path` in `group_vars/docker_hosts.yml`.
+Where `<PROXMOX_NFS_MEDIA_PATH>` and `<PROXMOX_NFS_COMPLETE_PATH>` are the Synology NFS mounts on the Proxmox host. The mount points must match `qbittorrent_incomplete_dir`, `jellyfin_cache_dir`, `jellyfin_transcode_dir`, `nas_media_path`, and `nas_complete_path` in `group_vars/docker_hosts.yml`.
 
 ### GPU passthrough (Intel Quick Sync)
 
-Emby uses Intel Quick Sync for hardware video transcoding. The container must be **stopped** before adding these lines to `/etc/pve/lxc/<CTID>.conf`:
+Jellyfin uses Intel Quick Sync for hardware video transcoding. The container must be **stopped** before adding these lines to `/etc/pve/lxc/<CTID>.conf`:
 
 ```
 lxc.cgroup2.devices.allow: c 226:0 rwm

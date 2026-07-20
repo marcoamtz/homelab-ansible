@@ -40,8 +40,8 @@ IN ACCEPT -p udp -dport 41641 -log nolog # Tailscale WireGuard Port
 [group docker_services] # Rules for Docker container services
 
 IN ACCEPT -source +dc/local_net -p tcp -dport {{ dockge_port }} -log nolog # Dockge Web UI
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ emby_port_http }} -log nolog # Emby HTTP
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ emby_port_https }} -log nolog # Emby HTTPS
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ jellyfin_port_http }} -log nolog # Jellyfin HTTP
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ jellyfin_port_https }} -log nolog # Jellyfin HTTPS
 IN ACCEPT -source +dc/local_net -p tcp -dport {{ speedtest_port }} -log nolog # Speedtest Tracker
 IN ACCEPT -source +dc/local_net -p tcp -dport {{ qbittorrent_port_webui }} -log nolog # qBittorrent WebUI
 IN ACCEPT -p tcp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent TCP (peers)
