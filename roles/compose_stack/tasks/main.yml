@@ -66,6 +66,8 @@
   community.docker.docker_compose_v2:
     project_src: "{{ item.dir }}"
     state: present
+    wait: true
+    wait_timeout: "{{ compose_health_wait_timeout }}"
   loop: "{{ compose_stacks }}"
   loop_control:
     label: "{{ item.name }}"
@@ -87,10 +89,15 @@
   tags: [service]
 
 - name: Verify stack endpoints are reachable
-  ansible.builtin.command: "curl -sf {{ item.health_url }}"
+  ansible.builtin.uri:
+    url: "{{ item.health_url }}"
+    method: GET
+    status_code: 200
+    return_content: false
+    timeout: "{{ item.health_timeout | default(10) }}"
+    use_proxy: false
   register: stack_health_check
-  changed_when: false
-  until: stack_health_check.rc == 0
+  until: (stack_health_check.status | default(0)) == 200
   retries: "{{ item.health_retries | default(3) }}"
   delay: 5
   loop: "{{ compose_stacks | selectattr('health_url', 'defined') | list }}"

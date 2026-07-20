@@ -2,11 +2,11 @@
 # Install with: ansible-galaxy collection install -r requirements.yml
 # Requires ansible-core >= 2.15 (ansible.builtin.deb822_repository).
 collections:
-  # docker_compose_v2 was introduced in community.docker 3.6.0.
+  # docker_compose_v2.wait was introduced in community.docker 3.8.0.
   # It drives the docker CLI compose plugin on the target — no Python
   # docker SDK needed there (unlike the retired v1 module).
   - name: community.docker
-    version: ">=3.6.0"
+    version: ">=3.8.0"
   # Provides the profile_tasks callback enabled in ansible.cfg.
   - name: ansible.posix
     version: ">=1.5.0"

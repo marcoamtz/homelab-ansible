@@ -78,7 +78,16 @@ directory → leaf-ownership config dir → rendered template →
 `community.docker.docker_compose_v2`. The module reconciles against the
 rendered file, so containers are recreated only when the compose file
 actually changed — no `--force-recreate` handlers, no stderr-regex change
-detection.
+detection. Compose startup waits for every service to be running or healthy;
+host-side endpoint probes then verify that each published HTTP path is
+reachable through Docker's port mapping. Jellyfin and Dockge inherit their
+image healthchecks, while qBittorrent and Speedtest Tracker define explicit
+checks in their Compose templates.
+
+Docker health status is detection, not auto-healing: `restart: unless-stopped`
+restarts exited containers but does not restart an `unhealthy` container.
+Avoid blind auto-restart loops for NFS-backed services; runtime health alerts
+belong in an external monitor that can also detect the Docker host being down.
 
 Config-directory ownership is set on the leaf directory only; the container
 manages files inside with its PUID/PGID. For a one-shot recursive reset

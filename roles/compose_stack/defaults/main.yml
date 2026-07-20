@@ -10,6 +10,8 @@
 #   health_retries optional retry override for slower-starting services
 # Per-stack settings come from the service variables in group_vars; override
 # this list there to add or remove stacks.
+compose_health_wait_timeout: 180
+
 compose_stacks:
   - name: dockge
     dir: "{{ dockge_data_dir }}"
@@ -35,12 +37,16 @@ compose_stacks:
   - name: speedtest-tracker
     dir: "{{ dockge_stacks_dir }}/speedtest-tracker"
     template: speedtest-tracker/compose.yml.j2
+    health_url: "http://localhost:{{ speedtest_port }}/api/healthcheck"
+    health_retries: 12
     config_dir: "{{ speedtest_config_dir }}"
     owner: "{{ speedtest_puid }}"
     group: "{{ speedtest_pgid }}"
   - name: qbittorrent
     dir: "{{ dockge_stacks_dir }}/qbittorrent"
     template: qbittorrent/compose.yml.j2
+    health_url: "http://localhost:{{ qbittorrent_port_webui }}/"
+    health_retries: 6
     config_dir: "{{ qbittorrent_config_dir }}"
     owner: "{{ qbittorrent_puid }}"
     group: "{{ qbittorrent_pgid }}"

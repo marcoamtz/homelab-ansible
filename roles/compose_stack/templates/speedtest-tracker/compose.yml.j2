@@ -27,3 +27,13 @@ services:
       MAIL_PASSWORD: "{{ speedtest_mail_password }}"
       MAIL_FROM_ADDRESS: "{{ speedtest_mail_from }}"
       MAIL_FROM_NAME: "{{ speedtest_app_name }}"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl --noproxy '*' -fsS --connect-timeout 2 --max-time 5
+          http://127.0.0.1/api/healthcheck > /dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
