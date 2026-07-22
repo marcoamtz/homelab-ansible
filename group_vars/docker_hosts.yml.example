@@ -18,6 +18,10 @@ jellyfin_transcode_dir: "/mnt/tank/jellyfin-transcode"
 # UID/GID for file permissions (match your media file ownership)
 jellyfin_uid: "1000"
 jellyfin_gid: "1000"
+# Subtitle fallback font (CJK glyph coverage for ASS/SSA subs)
+jellyfin_fonts_dir: "{{ jellyfin_config_dir }}/fonts"
+jellyfin_cjk_font_url: "https://raw.githubusercontent.com/notofonts/noto-cjk/Sans2.004/Sans/OTC/NotoSansCJK-Regular.ttc"
+jellyfin_cjk_font_checksum: "sha256:b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a"
 
 # === Speedtest Tracker ===
 speedtest_url: "192.168.1.220"

@@ -44,7 +44,7 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 
 - Docker CE installed via official apt repository
 - Dockge as compose stack management UI
-- Jellyfin media server with Intel Quick Sync hardware transcoding
+- Jellyfin media server with Intel Quick Sync hardware transcoding and CJK subtitle fallback font
 - Speedtest Tracker for internet speed monitoring
 - qBittorrent torrent client with split storage (incomplete on NVMe, complete on NFS)
 - Dual-stack IPv4/IPv6 networking with SLAAC for incoming IPv6 peer connections
@@ -52,6 +52,9 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 - Monthly cron to prune unused Docker images
 - All service ports configurable via group_vars
 - Post-deploy health checks
+
+> Note: one-time manual step after the first Jellyfin deploy — in Dashboard → Playback →
+> Transcoding, set "Fallback font folder path" to `/config/fonts` and enable fallback fonts.
 
 ### `deploy-proxmox-host.yml` — Proxmox Host
 

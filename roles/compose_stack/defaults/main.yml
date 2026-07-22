@@ -6,6 +6,7 @@
 #   config_dir  optional bind-mounted config dir, created with owner/group
 #   owner/group ownership for config_dir
 #   extra_dirs  optional additional dirs (path + optional owner/group)
+#   extra_files optional downloaded files (url + dest + optional checksum/owner/group)
 #   health_url  optional endpoint checked after startup
 #   health_retries optional retry override for slower-starting services
 # Per-stack settings come from the service variables in group_vars; override
@@ -32,6 +33,17 @@ compose_stacks:
         owner: "{{ jellyfin_uid }}"
         group: "{{ jellyfin_gid }}"
       - path: "{{ jellyfin_transcode_dir }}"
+        owner: "{{ jellyfin_uid }}"
+        group: "{{ jellyfin_gid }}"
+      - path: "{{ jellyfin_fonts_dir }}"
+        owner: "{{ jellyfin_uid }}"
+        group: "{{ jellyfin_gid }}"
+    extra_files:
+      # Subtitle fallback font (Dashboard -> Playback -> Transcoding sets
+      # the fallback font path to /config/fonts)
+      - url: "{{ jellyfin_cjk_font_url }}"
+        dest: "{{ jellyfin_fonts_dir }}/NotoSansCJK-Regular.ttc"
+        checksum: "{{ jellyfin_cjk_font_checksum }}"
         owner: "{{ jellyfin_uid }}"
         group: "{{ jellyfin_gid }}"
   - name: speedtest-tracker
