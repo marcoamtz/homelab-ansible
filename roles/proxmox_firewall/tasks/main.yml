@@ -29,10 +29,13 @@
     label: "{{ item.dest }}"
   tags: [firewall, config]
 
-# Bad rules silently no-op otherwise — compile fails loudly on syntax errors.
+# Bad rules silently no-op otherwise. compile exits 0 even when it skips
+# invalid lines or groups, so any stderr output counts as a failure.
 - name: Validate compiled firewall ruleset
   ansible.builtin.command: pve-firewall compile
+  register: pve_fw_compile
   changed_when: false
+  failed_when: pve_fw_compile.rc != 0 or pve_fw_compile.stderr | length > 0
   tags: [firewall, validate]
 
 - name: Verify firewall is active
