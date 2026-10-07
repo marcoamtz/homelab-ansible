@@ -1,0 +1,3 @@
+---
+# LXC network interface (net0 name in the CT config).
+tailscale_interface: eth0

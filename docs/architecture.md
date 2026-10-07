@@ -12,7 +12,7 @@ directly. The pattern lives once in `roles/common/tasks/systemd_enable.yml`
 `import_role` with a `systemd_unit` var. The matching ansible-lint rule
 (`command-instead-of-module`) is skipped in `.ansible-lint` for this reason.
 
-## Why sysctl is a copy + `sysctl -p` + @reboot cron, not `ansible.posix.sysctl`
+## Why sysctl is a copy + `sysctl -p` + boot unit, not `ansible.posix.sysctl`
 
 The sysctl module's reload can silently fail inside Proxmox LXC containers.
 Instead:
@@ -22,19 +22,21 @@ Instead:
    tunables) and, when it changed, loads just that file with `sysctl -p`.
    Not `sysctl --system`: in an unprivileged LXC it always exits 1, because
    Debian's default drop-ins set host-only keys (`kernel.*`, `fs.protected_*`).
-2. `roles/common/tasks/sysctl_reboot_cron.yml` installs a `@reboot` cron,
-   because LXC containers do not reliably re-apply sysctl.d on restart.
+2. `roles/common/tasks/boot_oneshot.yml` installs a oneshot systemd unit
+   (`After=network-online.target`) that re-runs `sysctl -p`, because LXC
+   containers do not reliably re-apply sysctl.d on restart. Not a `@reboot`
+   cron: cron can start before `eth0` is configured.
 
 Do not "modernize" this to the module — it would re-introduce a bug this
 repo already fixed.
 
-## Why the Tailscale ULA is re-added from cron
+## Why the Tailscale ULA is re-added at boot
 
 Proxmox regenerates a container's network from its CT config on every
 restart. CT 101 uses `ip6=auto` (SLAAC GUA for Tailscale IPv6), so the
 static ULA is added at runtime with `ip -6 addr add` — and would vanish on
-reboot, silently breaking the advertised IPv6 subnet route. The `@reboot`
-cron re-adds it (tolerating "File exists") before re-soliciting RAs.
+reboot, silently breaking the advertised IPv6 subnet route. The boot unit
+re-adds it (tolerating "File exists") before re-soliciting RAs.
 
 ## Why resolv.conf is pinned on the DNS container
 

@@ -9,6 +9,9 @@ docker_tank_mount: /mnt/tank
 # whose stacks only use the LXC root disk.
 docker_required_mounts: []
 
+# LXC network interface (net0 name in the CT config).
+docker_interface: eth0
+
 # ULA ranges for Docker's IPv6 networking. Host-local (NATed), so every
 # Docker host can use the same ones.
 docker_ipv6_cidr: "fd00:dead:beef::/48"

@@ -76,16 +76,17 @@
     sysctl_dropin_file: /etc/sysctl.d/99-docker-ra.conf
     sysctl_dropin_content: |
       net.ipv6.conf.all.accept_ra=2
-      net.ipv6.conf.eth0.accept_ra=2
+      net.ipv6.conf.{{ docker_interface }}.accept_ra=2
 
 - name: Re-apply sysctl on boot
   ansible.builtin.import_role:
     name: common
-    tasks_from: sysctl_reboot_cron
+    tasks_from: boot_oneshot
   vars:
-    sysctl_cron_name: sysctl-accept-ra
-    sysctl_cron_file: /etc/sysctl.d/99-docker-ra.conf
-    sysctl_cron_extra: /usr/bin/rdisc6 -1 eth0
+    boot_oneshot_name: sysctl-accept-ra
+    boot_oneshot_commands:
+      - /sbin/sysctl -p /etc/sysctl.d/99-docker-ra.conf
+      - /usr/bin/rdisc6 -1 {{ docker_interface }}
 
 - name: Weekly Docker image cleanup
   ansible.builtin.cron:
