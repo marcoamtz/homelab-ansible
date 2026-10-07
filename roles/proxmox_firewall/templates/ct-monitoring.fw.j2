@@ -1,0 +1,11 @@
+[OPTIONS]
+
+enable: 1
+ipfilter: 1
+
+{% include '_ipfilter-net0.j2' %}
+
+[RULES]
+
+GROUP monitoring_services
+GROUP management

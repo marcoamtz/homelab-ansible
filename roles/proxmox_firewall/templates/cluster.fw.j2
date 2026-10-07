@@ -47,3 +47,9 @@ IN ACCEPT -p tcp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent 
 IN ACCEPT -p udp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent UDP (peers)
 IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
 IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6
+
+[group monitoring_services] # Rules for Uptime Kuma
+
+IN ACCEPT -source +dc/local_net -p tcp -dport {{ uptime_kuma_port }} -log nolog # Uptime Kuma Web UI
+IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
+IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
