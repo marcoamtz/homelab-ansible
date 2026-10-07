@@ -5,7 +5,7 @@ nextdns_id: "XXXXXX"
 network_interface: "eth0"
 domain: "home.arpa"
 
-dns_server_ip: "192.168.1.210"
+dns_server_ip: "{{ ansible_host }}"  # from inventory.ini
 gateway_ip: "192.168.1.1"
 ipv6_prefix: "fd00:0:0:1"
 dns_server_ipv6: "{{ ipv6_prefix }}::210"
