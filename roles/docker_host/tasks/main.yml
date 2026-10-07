@@ -35,6 +35,7 @@
     suites: "{{ ansible_facts['distribution_release'] }}"
     components: stable
     signed_by: /etc/apt/keyrings/docker.asc
+  register: docker_apt_repo
   tags: [install]
 
 - name: Remove legacy Docker apt source list
@@ -47,7 +48,8 @@
   ansible.builtin.apt:
     name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
     state: present
-    update_cache: true
+    # common already refreshed the cache; only re-read it when the repo is new
+    update_cache: "{{ docker_apt_repo is changed }}"
   tags: [install]
 
 - name: Deploy Docker daemon configuration
