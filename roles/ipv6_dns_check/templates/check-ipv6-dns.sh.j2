@@ -22,4 +22,4 @@ fi
 
 curl -fsS -m 10 -o /dev/null -G \
     --data-urlencode "status=$status" --data-urlencode "msg=$msg" "$push_url" \
-    || logger -t check-ipv6-dns "Push to Uptime Kuma failed"
+    || { logger -t check-ipv6-dns "Push to Uptime Kuma failed"; exit 1; }
