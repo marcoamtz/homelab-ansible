@@ -133,7 +133,7 @@ upgrades never require one.
 6. Edit `group_vars/all.yml` with shared settings:
    - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from`, `mail_to` — SMTP settings for email notifications (DNS alerts + Speedtest); 🔒 vault-encrypt `mail_password`
    - `dockge_port` — Dockge web UI port (default: 5001)
-   - `jellyfin_port_http`, `jellyfin_port_https` — Jellyfin ports (default: 8096, 8920)
+   - `jellyfin_port_http` — Jellyfin port (default: 8096)
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
    - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
 

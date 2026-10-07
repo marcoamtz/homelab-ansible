@@ -12,7 +12,6 @@ mail_to: "you@example.com"
 # Define once here to avoid desync between container binds and firewall allows.
 dockge_port: 5001
 jellyfin_port_http: 8096
-jellyfin_port_https: 8920
 speedtest_port: 8088
 qbittorrent_port_webui: 8080
 qbittorrent_port_torrent: 6881

@@ -5,7 +5,6 @@ services:
     user: "{{ jellyfin_uid }}:{{ jellyfin_gid }}"
     ports:
       - "{{ jellyfin_port_http }}:8096"
-      - "{{ jellyfin_port_https }}:8920"
     volumes:
       - "{{ jellyfin_config_dir }}:/config"
       - "{{ jellyfin_cache_dir }}:/cache"
