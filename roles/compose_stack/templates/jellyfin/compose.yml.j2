@@ -3,6 +3,8 @@ services:
     image: jellyfin/jellyfin:12.2
     restart: unless-stopped
     user: "{{ jellyfin_uid }}:{{ jellyfin_gid }}"
+    group_add:
+      - "{{ jellyfin_render_gid }}"
     ports:
       - "{{ jellyfin_port_http }}:8096"
     volumes:

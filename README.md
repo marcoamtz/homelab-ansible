@@ -82,7 +82,6 @@ Creates the containers declared in `proxmox_lxcs` (`group_vars/proxmox_hosts.yml
 
 Deploys host-level configuration to the Proxmox server.
 
-- GPU device permissions for unprivileged LXC passthrough (udev rule)
 - Weekly TRIM for the OS drive (`fstrim.timer`)
 - Weekly TRIM for the ZFS tank pool (`zfs-trim-weekly@tank.timer`)
 
@@ -307,7 +306,7 @@ roles/
     templates/daemon.json.j2       #   Docker daemon config (IPv6, ip6tables)
   compose_stack/                   # Data-driven compose stacks (see defaults/main.yml)
     templates/                     #   dockge, jellyfin, speedtest-tracker, qbittorrent, uptime-kuma
-  proxmox_host/                    # GPU passthrough, TRIM timers, NFS pre-start hook
+  proxmox_host/                    # TRIM timers, NFS pre-start hook
     templates/wait-for-nfs.sh.j2   #   CT pre-start hook: block boot until NFS mounted
   proxmox_lxc/                     # Create-only LXC provisioning + drift check
   proxmox_firewall/                # Cluster + per-CT firewall configs
