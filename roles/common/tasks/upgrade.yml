@@ -1,0 +1,18 @@
+---
+# Shared via import_role tasks_from (update-all.yml).
+- name: Update and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+  register: common_upgrade_result
+
+- name: Show upgraded packages  # noqa: no-handler
+  ansible.builtin.debug:
+    msg: "{{ common_upgrade_result.stdout_lines | default([]) }}"
+  when: common_upgrade_result is changed
+
+- name: Remove obsolete packages
+  ansible.builtin.apt:
+    autoremove: true
+    purge: true
+  tags: [cleanup]
