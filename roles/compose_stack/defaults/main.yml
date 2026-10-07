@@ -7,6 +7,9 @@
 #   owner/group ownership for config_dir
 #   extra_dirs  optional additional dirs (path + optional owner/group)
 #   extra_files optional downloaded files (url + dest + optional checksum/owner/group)
+#   secrets     optional env vars written to <dir>/secrets.env (root, 0600) and
+#               loaded with env_file, keeping them out of the world-readable
+#               compose.yml and out of Dockge's compose/.env editor
 #   health_url  optional endpoint checked after startup
 #   health_retries optional retry override for slower-starting services
 # Per-stack settings come from the service variables in group_vars; override
@@ -54,6 +57,9 @@ compose_stacks:
     config_dir: "{{ speedtest_config_dir }}"
     owner: "{{ speedtest_puid }}"
     group: "{{ speedtest_pgid }}"
+    secrets:
+      APP_KEY: "{{ speedtest_app_key }}"
+      MAIL_PASSWORD: "{{ speedtest_mail_password }}"
   - name: qbittorrent
     dir: "{{ dockge_stacks_dir }}/qbittorrent"
     template: qbittorrent/compose.yml.j2

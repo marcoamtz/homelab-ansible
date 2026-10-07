@@ -61,6 +61,19 @@
     label: "{{ item.name }}"
   tags: [never, fix-permissions]
 
+- name: Render stack secrets
+  ansible.builtin.template:
+    src: _shared/secrets.env.j2
+    dest: "{{ item.dir }}/secrets.env"
+    owner: root
+    group: root
+    mode: "0600"
+  loop: "{{ compose_stacks | selectattr('secrets', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+  tags: [config]
+
 - name: Render compose files
   ansible.builtin.template:
     src: "{{ item.template }}"

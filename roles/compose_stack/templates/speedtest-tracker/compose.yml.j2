@@ -6,11 +6,14 @@ services:
       - "{{ speedtest_port }}:80"
     volumes:
       - "{{ speedtest_config_dir }}:/config"
+    env_file:
+      # APP_KEY, MAIL_PASSWORD (root-only, rendered by Ansible)
+      - path: secrets.env
+        format: raw
     environment:
       PUID: "{{ speedtest_puid }}"
       PGID: "{{ speedtest_pgid }}"
       DB_CONNECTION: sqlite
-      APP_KEY: "{{ speedtest_app_key }}"
       APP_URL: "http://{{ speedtest_url }}:{{ speedtest_port }}"
       APP_NAME: "{{ speedtest_app_name }}"
       PUBLIC_DASHBOARD: "{{ speedtest_public_dashboard }}"
@@ -24,7 +27,6 @@ services:
       MAIL_ENCRYPTION: "{{ speedtest_mail_encryption }}"
       MAIL_PORT: "{{ speedtest_mail_port }}"
       MAIL_USERNAME: "{{ speedtest_mail_username }}"
-      MAIL_PASSWORD: "{{ speedtest_mail_password }}"
       MAIL_FROM_ADDRESS: "{{ speedtest_mail_from }}"
       MAIL_FROM_NAME: "{{ speedtest_app_name }}"
     healthcheck:
