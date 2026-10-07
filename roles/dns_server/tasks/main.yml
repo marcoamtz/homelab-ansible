@@ -99,31 +99,6 @@
   vars:
     systemd_unit: dnsmasq
 
-# IPv6 RDNSS monitoring moved to the Uptime Kuma host (ipv6_dns_check role);
-# remove the msmtp-based version.
-- name: Remove legacy IPv6 DNS alert cron
-  ansible.builtin.cron:
-    name: check-ipv6-dns
-    state: absent
-  tags: [config]
-
-- name: Remove legacy IPv6 DNS alert files
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /usr/local/bin/check-ipv6-dns.sh
-    - /tmp/ipv6-dns-alert-sent
-    - /etc/msmtprc
-  tags: [config]
-
-- name: Remove msmtp
-  ansible.builtin.apt:
-    name: msmtp
-    state: absent
-    purge: true
-  tags: [install]
-
 - name: Verify DNS resolution works
   ansible.builtin.command: dig +short +time=5 google.com @127.0.0.1
   register: dns_check
