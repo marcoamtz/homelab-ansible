@@ -1,0 +1,18 @@
+---
+# Shared via import_role tasks_from (also used by proxmox_host). Ansible
+# connects with a key; passwords are never needed over SSH. A drop-in, not
+# sshd_config edits: Debian includes sshd_config.d/ first and the first value
+# wins, and the main file stays the distribution's.
+- name: Disable SSH password authentication
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-ansible-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible.
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+    validate: sshd -t -f %s
+  notify: Reload sshd
+  tags: [config]

@@ -2,3 +2,11 @@
 - name: Generate locales
   ansible.builtin.command: locale-gen
   changed_when: true
+
+# Not reload: with socket activation (Debian 13 LXC templates) the SIGHUP
+# re-exec tries to bind port 22, which ssh.socket holds, and sshd dies.
+# try-restart hands the socket back cleanly, and is a no-op when only the
+# socket is active — new connections read the config anyway.
+- name: Reload sshd
+  ansible.builtin.command: systemctl try-restart ssh.service
+  changed_when: true
