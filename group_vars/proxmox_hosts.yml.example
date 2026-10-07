@@ -3,6 +3,7 @@
 dns_ctid: 100
 tailscale_ctid: 101
 docker_ctid: 102
+monitoring_ctid: 103
 
 # Local IPv4 subnet for firewall ipsets
 local_ipv4_subnet: "192.168.1.0/24"
@@ -24,3 +25,42 @@ lxc_pre_start_nfs_waits:
   102:
     - /mnt/pve/nfs-share-1
     - /mnt/pve/nfs-share-2
+
+# === LXC containers (roles/proxmox_lxc) ===
+# Create-only: missing CTs are created, existing ones are drift-checked
+# against these values. Keys and values exactly as `pct config` prints them
+# (pin hwaddr so the drift check can compare net0 verbatim).
+proxmox_lxcs:
+  - ctid: "{{ dns_ctid }}"
+    rootfs: tank:8
+    config:
+      arch: amd64
+      cores: 1
+      features: nesting=1
+      hostname: dns-gateway
+      memory: 512
+      nameserver: 9.9.9.9
+      net0: name=eth0,bridge=vmbr0,firewall=1,gw=192.168.1.1,hwaddr=BC:24:11:00:00:01,ip=192.168.1.210/24,ip6=auto,type=veth
+      onboot: 1
+      ostype: debian
+      startup: order=1
+      swap: 512
+      unprivileged: 1
+  # ... tailscale_ctid and docker_ctid entries (see `pct config <ctid>`);
+  # raw lxc.* lines (e.g. /dev/net/tun, /dev/dri passthrough) go under `lxc:`
+  - ctid: "{{ monitoring_ctid }}"
+    rootfs: tank:8
+    config:
+      arch: amd64
+      cores: 1
+      features: nesting=1
+      hostname: uptime-kuma
+      memory: 1024
+      # Not the DNS container: alerts must still go out when it is down
+      nameserver: 192.168.1.1 9.9.9.9
+      net0: name=eth0,bridge=vmbr0,firewall=1,gw=192.168.1.1,hwaddr=BC:24:11:00:00:04,ip=192.168.1.215/24,ip6=auto,type=veth
+      onboot: 1
+      ostype: debian
+      startup: order=4
+      swap: 512
+      unprivileged: 1

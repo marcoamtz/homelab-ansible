@@ -1,0 +1,109 @@
+---
+- name: Check which LXCs exist
+  ansible.builtin.stat:
+    path: "/etc/pve/lxc/{{ item.ctid }}.conf"
+  loop: "{{ proxmox_lxcs }}"
+  loop_control:
+    label: "CT {{ item.ctid }}"
+  register: proxmox_lxc_stat
+  tags: [always]
+
+- name: Select LXCs to create
+  ansible.builtin.set_fact:
+    proxmox_lxc_missing: "{{ proxmox_lxc_stat.results | rejectattr('stat.exists') | map(attribute='item') | list }}"
+  tags: [always]
+
+- name: Download LXC template
+  ansible.builtin.command: pveam download {{ proxmox_lxc_template_storage }} {{ proxmox_lxc_template }}
+  args:
+    creates: "/var/lib/vz/template/cache/{{ proxmox_lxc_template }}"
+  when: proxmox_lxc_missing | length > 0
+  tags: [provision]
+
+- name: Stage Ansible SSH public key for new LXCs
+  ansible.builtin.copy:
+    content: "{{ proxmox_lxc_ssh_public_key }}\n"
+    dest: /root/.ssh/ansible-lxc.pub
+    owner: root
+    group: root
+    mode: "0644"
+  when: proxmox_lxc_missing | length > 0
+  tags: [provision]
+
+- name: Create missing LXCs
+  ansible.builtin.command:
+    cmd: >-
+      pct create {{ item.ctid }}
+      {{ proxmox_lxc_template_storage }}:vztmpl/{{ proxmox_lxc_template }}
+      --rootfs {{ item.rootfs }}
+      --ssh-public-keys /root/.ssh/ansible-lxc.pub
+      {% for key, value in item.config.items() %}--{{ key }} {{ value | string | quote }} {% endfor %}
+  loop: "{{ proxmox_lxc_missing }}"
+  loop_control:
+    label: "CT {{ item.ctid }}"
+  changed_when: true
+  tags: [provision]
+
+# pct cannot set raw lxc.* keys, and pmxcfs (/etc/pve) does not support the
+# atomic rename lineinfile relies on, so append before first start.
+- name: Append raw lxc.* lines to new LXCs
+  ansible.builtin.shell: >-
+    printf '%s\n' {{ item.lxc | map('quote') | join(' ') }}
+    >> /etc/pve/lxc/{{ item.ctid }}.conf
+  loop: "{{ proxmox_lxc_missing | selectattr('lxc', 'defined') | list }}"
+  loop_control:
+    label: "CT {{ item.ctid }}"
+  changed_when: true
+  tags: [provision]
+
+- name: Start new LXCs
+  ansible.builtin.command: pct start {{ item.ctid }}
+  loop: "{{ proxmox_lxc_missing }}"
+  loop_control:
+    label: "CT {{ item.ctid }}"
+  changed_when: true
+  tags: [provision]
+
+# --- Drift check: declared config vs live `pct config` ---
+- name: Read live LXC configs
+  ansible.builtin.command: pct config {{ item.ctid }}
+  loop: "{{ proxmox_lxcs }}"
+  loop_control:
+    label: "CT {{ item.ctid }}"
+  register: proxmox_lxc_live
+  changed_when: false
+  # A CT that check mode would have created does not exist yet
+  failed_when: false
+  check_mode: false
+  tags: [validate]
+
+- name: Report LXC config drift
+  ansible.builtin.assert:
+    that: proxmox_lxc_drift | length == 0
+    fail_msg: >-
+      CT {{ item.item.ctid }} differs from proxmox_lxcs: {{ proxmox_lxc_drift | join('; ') }}.
+      Update group_vars or the container (pct set); this role never changes
+      existing containers.
+    quiet: true
+  vars:
+    proxmox_lxc_current: "{{ item.stdout_lines | reject('match', '^lxc[.]') | join('\n') | from_yaml }}"
+    proxmox_lxc_drift: >-
+      {%- set drift = [] -%}
+      {%- for key, value in item.item.config.items() -%}
+      {%-   set live = proxmox_lxc_current[key] | default('<unset>') | string -%}
+      {%-   if live != value | string -%}
+      {%-     set _ = drift.append(key ~ ' is ' ~ live ~ ', declared ' ~ value) -%}
+      {%-   endif -%}
+      {%- endfor -%}
+      {%- if item.stdout_lines | select('match', '^lxc[.]') | list != item.item.lxc | default([]) -%}
+      {%-   set _ = drift.append('raw lxc.* lines differ') -%}
+      {%- endif -%}
+      {{ drift }}
+  loop: "{{ proxmox_lxc_live.results }}"
+  loop_control:
+    label: "CT {{ item.item.ctid }}"
+  when: item.rc == 0
+  register: proxmox_lxc_drift_check
+  # Drift is reported, never fatal
+  ignore_errors: true
+  tags: [validate]
