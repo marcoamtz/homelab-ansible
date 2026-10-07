@@ -1,0 +1,13 @@
+---
+- name: Deploy Uptime Kuma (LXC Optimized)
+  hosts: monitoring_hosts
+  become: true
+
+  roles:
+    - role: common
+      vars:
+        # python3-debian is required by deb822_repository in docker_host
+        common_extra_packages: [ca-certificates, locales, python3-debian]
+    - docker_host
+    - compose_stack
+    - ipv6_dns_check

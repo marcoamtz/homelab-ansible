@@ -1,0 +1,17 @@
+---
+# Uptime Kuma data (SQLite DB) on the LXC root disk — covered by vzdump
+uptime_kuma_data_dir: "/opt/stacks/uptime-kuma/data"
+
+# Replaces the docker_hosts stack list (see roles/compose_stack/defaults)
+compose_stacks:
+  - name: uptime-kuma
+    dir: "/opt/stacks/uptime-kuma"
+    template: uptime-kuma/compose.yml.j2
+    health_url: "http://localhost:{{ uptime_kuma_port }}"
+    health_retries: 12
+    extra_dirs:
+      - path: "{{ uptime_kuma_data_dir }}"
+
+# IPv6 RDNSS check: in Kuma, Add New Monitor -> Push, then paste the last
+# path segment of its push URL here. Empty = check not installed yet.
+ipv6_dns_check_push_token: ""

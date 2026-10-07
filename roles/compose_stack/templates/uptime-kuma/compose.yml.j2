@@ -1,0 +1,10 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.5-slim
+    restart: unless-stopped
+    ports:
+      - "{{ uptime_kuma_port }}:3001"
+    volumes:
+      - "{{ uptime_kuma_data_dir }}:/app/data"
+    environment:
+      TZ: "{{ docker_timezone }}"
