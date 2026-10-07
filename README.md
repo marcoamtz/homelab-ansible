@@ -261,6 +261,9 @@ pre-commit install        # once; runs yamllint + ansible-lint on commit
 pre-commit run --all-files
 ```
 
+CI runs the same hooks on every push to `main` and on pull requests
+(`.github/workflows/lint.yml`).
+
 ## LXC Notes
 
 The container roles include workarounds for Proxmox LXC containers —
