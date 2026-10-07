@@ -8,46 +8,17 @@
   loop: "{{ docker_required_mounts }}"
   tags: [always]
 
-- name: Ensure apt keyrings directory exists
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
-  tags: [install]
-
-- name: Install Docker apt signing key
-  ansible.builtin.get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: /etc/apt/keyrings/docker.asc
-    owner: root
-    group: root
-    mode: "0644"
-  tags: [install]
-
-- name: Configure Docker apt repository
-  ansible.builtin.deb822_repository:
-    name: docker
-    types: deb
-    uris: https://download.docker.com/linux/debian
-    suites: "{{ ansible_facts['distribution_release'] }}"
-    components: stable
-    signed_by: /etc/apt/keyrings/docker.asc
-  register: docker_apt_repo
-  tags: [install]
-
-- name: Remove legacy Docker apt source list
-  ansible.builtin.file:
-    path: /etc/apt/sources.list.d/docker.list
-    state: absent
-  tags: [install]
-
 - name: Install Docker CE
-  ansible.builtin.apt:
-    name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
-    state: present
-    # common already refreshed the cache; only re-read it when the repo is new
-    update_cache: "{{ docker_apt_repo is changed }}"
-  tags: [install]
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: apt_repository
+  vars:
+    apt_repo_name: docker
+    apt_repo_key_url: https://download.docker.com/linux/debian/gpg
+    apt_repo_uri: https://download.docker.com/linux/debian
+    apt_repo_suites: "{{ ansible_facts['distribution_release'] }}"
+    apt_repo_components: stable
+    apt_repo_packages: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
 
 - name: Deploy Docker daemon configuration
   ansible.builtin.template:

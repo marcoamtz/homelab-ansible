@@ -8,19 +8,29 @@
     quiet: true
   tags: [always]
 
-# WARNING: Pipes a remote script to shell as root. This is NextDNS's official
-# install method, but carries inherent supply-chain risk. Pin to the apt repo
-# if NextDNS publishes a stable signing key + source list.
-- name: Bootstrap NextDNS CLI
-  ansible.builtin.shell: |
-    set -o pipefail
-    curl -fsSL https://nextdns.io/install | sh -s -- -id {{ nextdns_id }} -setup-router=false < /dev/null
-  args:
-    creates: /usr/bin/nextdns
-    executable: /bin/bash
-  no_log: true
-  notify: Reload systemd
-  tags: [install]
+# Config first: the package's postinst runs `nextdns install`, which installs
+# and starts the service with whatever /etc/nextdns.conf holds.
+- name: Deploy NextDNS configuration
+  ansible.builtin.template:
+    src: nextdns.conf.j2
+    dest: /etc/nextdns.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nextdns
+  tags: [config]
+
+- name: Install NextDNS
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: apt_repository
+  vars:
+    apt_repo_name: nextdns
+    apt_repo_key_url: https://repo.nextdns.io/nextdns.gpg
+    apt_repo_uri: https://repo.nextdns.io/deb
+    apt_repo_suites: stable
+    apt_repo_components: main
+    apt_repo_packages: [nextdns]
 
 - name: Ensure dnsmasq.d directory exists
   ansible.builtin.file:
@@ -56,16 +66,6 @@
     label: "{{ item.path | basename }}"
   when: item.path | basename not in dnsmasq_configs
   notify: Restart dnsmasq
-  tags: [config]
-
-- name: Deploy NextDNS configuration
-  ansible.builtin.template:
-    src: nextdns.conf.j2
-    dest: /etc/nextdns.conf
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart nextdns
   tags: [config]
 
 - name: Fix LXC resolv.conf and prevent Proxmox overwrite
