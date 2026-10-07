@@ -1,0 +1,25 @@
+#!/bin/bash
+# Report to an Uptime Kuma Push monitor whether the router's Router
+# Advertisements list only our DNS server ({{ ipv6_dns_check_expected_rdnss }})
+# as RDNSS. When the ISP resets the router's IPv6 DNS source to "DNS agent"
+# via TR-069, the RDNSS changes to an ISP server or the router itself.
+# Kuma alerts on status=down, on recovery, and when pushes stop arriving.
+set -u
+
+push_url="http://127.0.0.1:{{ uptime_kuma_port }}/api/push/{{ ipv6_dns_check_push_token }}"
+
+ra_output=$(/usr/bin/rdisc6 -m {{ ipv6_dns_check_interface }} 2>/dev/null)
+foreign_rdnss=$(awk '/Recursive DNS server/{print $NF}' <<<"$ra_output" \
+  | grep -vxF "{{ ipv6_dns_check_expected_rdnss }}" | sort -u | paste -sd' ' -)
+
+if [ -n "$foreign_rdnss" ]; then
+    status=down
+    msg="Router advertises foreign IPv6 DNS: $foreign_rdnss. Set the router's IPv6 DNS source back to Static configuration ({{ ipv6_dns_check_expected_rdnss }})."
+else
+    status=up
+    msg=OK
+fi
+
+curl -fsS -m 10 -o /dev/null -G \
+    --data-urlencode "status=$status" --data-urlencode "msg=$msg" "$push_url" \
+    || { logger -t check-ipv6-dns "Push to Uptime Kuma failed"; exit 1; }

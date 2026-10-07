@@ -1,30 +1,48 @@
 ---
 # No reboot handling on purpose — LXC containers share the host kernel, so
 # dist-upgrade inside a container never requires a container reboot.
-- name: Update all LXC containers
-  hosts: lxc_containers
+#
+# The DNS container goes first, on its own: an upgrade can restart dnsmasq,
+# and the other containers' apt downloads depend on it resolving. The second
+# play only starts once DNS answers again.
+- name: Update the DNS container
+  hosts: dns_servers
   become: true
+  # A failure here aborts the whole run, so the second play never starts
+  # while DNS is broken.
+  any_errors_fatal: true
 
-  pre_tasks:
+  tasks:
     - name: Configure apt package caching
       ansible.builtin.import_role:
         name: common
         tasks_from: apt_cache
 
+    - name: Upgrade packages
+      ansible.builtin.import_role:
+        name: common
+        tasks_from: upgrade
+
+    - name: Verify DNS resolution after upgrade
+      ansible.builtin.command: dig +short +time=5 google.com @127.0.0.1
+      register: update_dns_check
+      changed_when: false
+      check_mode: false  # read-only; must run for the gate to mean anything
+      until: update_dns_check.stdout | length > 0
+      retries: 6
+      delay: 5
+
+- name: Update the other LXC containers
+  hosts: lxc_containers:!dns_servers
+  become: true
+
   tasks:
-    - name: Update and upgrade packages
-      ansible.builtin.apt:
-        update_cache: true
-        upgrade: dist
-      register: apt_result
+    - name: Configure apt package caching
+      ansible.builtin.import_role:
+        name: common
+        tasks_from: apt_cache
 
-    - name: Show upgraded packages  # noqa: no-handler
-      ansible.builtin.debug:
-        msg: "{{ apt_result.stdout_lines | default([]) }}"
-      when: apt_result is changed
-
-    - name: Remove obsolete packages
-      ansible.builtin.apt:
-        autoremove: true
-        purge: true
-      tags: [cleanup]
+    - name: Upgrade packages
+      ansible.builtin.import_role:
+        name: common
+        tasks_from: upgrade

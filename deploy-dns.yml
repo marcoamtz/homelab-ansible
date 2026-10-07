@@ -8,5 +8,4 @@
       vars:
         common_extra_packages: [dnsmasq, debian-archive-keyring, dnsutils]
         common_manage_locale: false
-        common_enable_msmtp: true  # check-ipv6-dns.sh pipes alerts to msmtp
     - dns_server

@@ -1,0 +1,31 @@
+---
+- name: Skip IPv6 DNS check until a Kuma push token is set
+  ansible.builtin.debug:
+    msg: >-
+      ipv6_dns_check_push_token is empty — create a Push monitor in Uptime Kuma,
+      set the token in group_vars/monitoring_hosts.yml and re-run.
+  when: ipv6_dns_check_push_token | length == 0
+
+- name: Deploy IPv6 DNS check script
+  ansible.builtin.template:
+    src: check-ipv6-dns.sh.j2
+    dest: /usr/local/bin/check-ipv6-dns.sh
+    owner: root
+    group: root
+    mode: "0700"
+  when: ipv6_dns_check_push_token | length > 0
+  tags: [config]
+
+- name: Schedule IPv6 DNS check
+  ansible.builtin.cron:
+    name: check-ipv6-dns
+    minute: "{{ ipv6_dns_check_minute }}"
+    job: /usr/local/bin/check-ipv6-dns.sh
+  when: ipv6_dns_check_push_token | length > 0
+  tags: [config]
+
+- name: Run IPv6 DNS check once
+  ansible.builtin.command: /usr/local/bin/check-ipv6-dns.sh
+  changed_when: false
+  when: ipv6_dns_check_push_token | length > 0
+  tags: [validate]

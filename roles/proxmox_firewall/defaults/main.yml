@@ -10,3 +10,4 @@ proxmox_firewall_configs:
   - { src: ct-dns.fw.j2, dest: "/etc/pve/firewall/{{ dns_ctid }}.fw" }
   - { src: ct-tailscale.fw.j2, dest: "/etc/pve/firewall/{{ tailscale_ctid }}.fw" }
   - { src: ct-docker.fw.j2, dest: "/etc/pve/firewall/{{ docker_ctid }}.fw" }
+  - { src: ct-monitoring.fw.j2, dest: "/etc/pve/firewall/{{ monitoring_ctid }}.fw" }

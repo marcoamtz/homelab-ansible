@@ -1,5 +1,6 @@
 ---
-# Shared email settings — used by DNS alerts and Speedtest Tracker notifications.
+# Shared email settings — used by Speedtest Tracker notifications; also what
+# to enter in Uptime Kuma's SMTP notification (configured in its UI).
 mail_host: "smtp.gmail.com"
 mail_port: "465"
 mail_username: "you@example.com"
@@ -12,7 +13,10 @@ mail_to: "you@example.com"
 # Define once here to avoid desync between container binds and firewall allows.
 dockge_port: 5001
 jellyfin_port_http: 8096
-jellyfin_port_https: 8920
 speedtest_port: 8088
 qbittorrent_port_webui: 8080
 qbittorrent_port_torrent: 6881
+uptime_kuma_port: 3001
+
+# Timezone for containers (compose TZ / DISPLAY_TIMEZONE)
+docker_timezone: "America/Mexico_City"

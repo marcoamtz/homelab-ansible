@@ -8,10 +8,9 @@
 - name: Install base packages
   ansible.builtin.import_tasks: base_packages.yml
 
+- name: Configure unattended security upgrades
+  ansible.builtin.import_tasks: unattended_upgrades.yml
+
 - name: Configure locale
   ansible.builtin.import_tasks: locale.yml
   when: common_manage_locale
-
-- name: Configure msmtp mailer
-  ansible.builtin.import_tasks: install_msmtp.yml
-  when: common_enable_msmtp

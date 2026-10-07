@@ -2,8 +2,10 @@
 # Shared via import_role tasks_from. Caller sets `sysctl_dropin_file` and
 # `sysctl_dropin_content`.
 # A sysctl.d drop-in avoids overwriting unrelated kernel tunables. Applied
-# via handler because the ansible.posix.sysctl module's reload can silently
-# fail inside Proxmox LXC containers (see docs/architecture.md).
+# with `sysctl -p <file>` rather than the ansible.posix.sysctl module, whose
+# reload can silently fail inside Proxmox LXC containers, or `sysctl --system`,
+# which always exits 1 in unprivileged LXCs because Debian's default drop-ins
+# set host-only keys (see docs/architecture.md).
 - name: Deploy sysctl drop-in {{ sysctl_dropin_file | basename }}
   ansible.builtin.copy:
     content: "{{ sysctl_dropin_content }}"
@@ -11,5 +13,12 @@
     owner: root
     group: root
     mode: "0644"
-  notify: Apply sysctl settings
+  register: sysctl_dropin_result
+  tags: [config]
+
+# A task, not a handler: the handler would not know which file to load.
+- name: Apply sysctl drop-in {{ sysctl_dropin_file | basename }}  # noqa: no-handler
+  ansible.builtin.command: sysctl -p {{ sysctl_dropin_file }}
+  when: sysctl_dropin_result is changed
+  changed_when: true
   tags: [config]

@@ -4,3 +4,12 @@
 # jellyfin_transcode_dir must live under it; if it is not mounted, those dirs
 # would silently land on the LXC root disk.
 docker_tank_mount: /mnt/tank
+
+# Bind mounts that must be active before any stack starts. Empty for hosts
+# whose stacks only use the LXC root disk.
+docker_required_mounts: []
+
+# ULA ranges for Docker's IPv6 networking. Host-local (NATed), so every
+# Docker host can use the same ones.
+docker_ipv6_cidr: "fd00:dead:beef::/48"
+docker_ipv6_pool: "fd00:dead:cafe::/48"

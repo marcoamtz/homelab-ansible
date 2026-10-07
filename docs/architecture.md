@@ -12,15 +12,16 @@ directly. The pattern lives once in `roles/common/tasks/systemd_enable.yml`
 `import_role` with a `systemd_unit` var. The matching ansible-lint rule
 (`command-instead-of-module`) is skipped in `.ansible-lint` for this reason.
 
-## Why sysctl is a copy + handler + @reboot cron, not `ansible.posix.sysctl`
+## Why sysctl is a copy + `sysctl -p` + @reboot cron, not `ansible.posix.sysctl`
 
 The sysctl module's reload can silently fail inside Proxmox LXC containers.
 Instead:
 
 1. `roles/common/tasks/sysctl_dropin.yml` writes a drop-in under
    `/etc/sysctl.d/` (never `/etc/sysctl.conf`, to avoid clobbering unrelated
-   tunables) and notifies the `Apply sysctl settings` handler, which runs
-   `sysctl --system` — the same superset boot applies.
+   tunables) and, when it changed, loads just that file with `sysctl -p`.
+   Not `sysctl --system`: in an unprivileged LXC it always exits 1, because
+   Debian's default drop-ins set host-only keys (`kernel.*`, `fs.protected_*`).
 2. `roles/common/tasks/sysctl_reboot_cron.yml` installs a `@reboot` cron,
    because LXC containers do not reliably re-apply sysctl.d on restart.
 

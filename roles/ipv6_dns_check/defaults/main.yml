@@ -1,0 +1,10 @@
+---
+# The only RDNSS the router may advertise; anything else means the ISP reset
+# the router's IPv6 DNS source via TR-069.
+ipv6_dns_check_expected_rdnss: "{{ hostvars[groups['dns_servers'][0]]['dns_server_ipv6'] }}"
+ipv6_dns_check_interface: eth0
+ipv6_dns_check_minute: "*/5"
+
+# Uptime Kuma Push monitor token (last path segment of the push URL). The
+# check is only installed once it is set.
+ipv6_dns_check_push_token: ""

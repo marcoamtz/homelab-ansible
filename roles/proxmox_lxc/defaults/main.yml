@@ -1,0 +1,18 @@
+---
+# Template new LXCs are created from; downloaded with pveam when missing.
+# The download check assumes a directory storage at /var/lib/vz (`local`).
+proxmox_lxc_template: debian-13-standard_13.1-2_amd64.tar.zst
+proxmox_lxc_template_storage: local
+
+# Injected into root's authorized_keys on new LXCs: the key Ansible connects with.
+proxmox_lxc_ssh_public_key: "{{ lookup('ansible.builtin.file', (ansible_ssh_private_key_file | expanduser) ~ '.pub') }}"
+
+# Containers managed by this role. Each entry:
+#   ctid    container ID
+#   rootfs  root disk in pct create syntax (<storage>:<size in GB>)
+#   config  `pct config` keys and values, written exactly as `pct config`
+#           prints them; passed to `pct create` and compared against the
+#           live config on every run (drift check)
+#   lxc     optional raw lxc.* lines, appended at create time and drift-checked
+# Create-only: an existing container is never modified, only reported on.
+proxmox_lxcs: []
