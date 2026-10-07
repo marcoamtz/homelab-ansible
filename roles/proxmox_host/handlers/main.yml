@@ -1,4 +1,4 @@
 ---
 - name: Reload udev rules
-  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger --subsystem-match=drm
+  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger --action=add --subsystem-match=drm
   changed_when: false

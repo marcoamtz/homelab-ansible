@@ -37,7 +37,8 @@
       - /sbin/sysctl -p /etc/sysctl.d/99-tailscale.conf
       # `-`: "File exists" when the address survived is fine
       - "-/sbin/ip -6 addr add {{ ula_address }} dev {{ tailscale_interface }}"
-      - /usr/bin/rdisc6 -1 {{ tailscale_interface }}
+      # `-`: best effort, see docker_host
+      - "-/usr/bin/rdisc6 -1 {{ tailscale_interface }}"
 
 # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
 - name: Assign static ULA address

@@ -57,7 +57,9 @@
     boot_oneshot_name: sysctl-accept-ra
     boot_oneshot_commands:
       - /sbin/sysctl -p /etc/sysctl.d/99-docker-ra.conf
-      - /usr/bin/rdisc6 -1 {{ docker_interface }}
+      # `-`: best effort — fails with "Network is unreachable" until the
+      # link-local address is ready; periodic RAs still arrive with accept_ra=2
+      - "-/usr/bin/rdisc6 -1 {{ docker_interface }}"
 
 - name: Weekly Docker image cleanup
   ansible.builtin.cron:
