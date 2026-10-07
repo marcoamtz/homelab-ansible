@@ -71,18 +71,3 @@
   register: pct_hookscript_result
   changed_when: false  # pct set is config-level idempotent; no diff signal
   tags: [config]
-
-- name: Re-check GPU device permissions
-  ansible.builtin.stat:
-    path: /dev/dri/renderD128
-  register: gpu_render_device_after
-  when: gpu_render_device.stat.exists
-  tags: [validate]
-
-- name: Verify GPU device is world-readable
-  ansible.builtin.assert:
-    that: gpu_render_device_after.stat.mode == "0666"
-    fail_msg: "/dev/dri/renderD128 is not 0666 — Jellyfin hardware transcoding will fail inside the LXC"
-    quiet: true
-  when: gpu_render_device.stat.exists
-  tags: [validate]

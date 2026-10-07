@@ -75,6 +75,7 @@
 
 # The module reconciles against the rendered compose file — containers are
 # only recreated when the file actually changed, so no restart handlers.
+# wait: fails the task if any container is not running (or not healthy).
 - name: Start compose stacks
   community.docker.docker_compose_v2:
     project_src: "{{ item.dir }}"
@@ -84,21 +85,6 @@
   loop: "{{ compose_stacks }}"
   loop_control:
     label: "{{ item.name }}"
-  register: compose_results
-  tags: [service]
-
-- name: Verify stack containers are running
-  ansible.builtin.assert:
-    that: item.containers | selectattr('State', 'ne', 'running') | list | length == 0
-    fail_msg: "Stack {{ item.item.name }} has non-running containers"
-    quiet: true
-  loop: "{{ compose_results.results }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  # containers is absent in --check mode, where nothing was started
-  when:
-    - compose_results.results is defined
-    - item.containers is defined
   tags: [service]
 
 - name: Verify stack endpoints are reachable
