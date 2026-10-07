@@ -4,6 +4,60 @@
     name: common
     tasks_from: assert_debian
 
+- name: Harden SSH
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: sshd
+
+# --- Mail relay ---
+# Proxmox notifications (vzdump, zed, smartd) go out through the local
+# Postfix. Direct delivery to port 25 is ISP-blocked, so relay through the
+# shared mail_* SMTP account.
+- name: Install Postfix SASL support
+  ansible.builtin.apt:
+    name: libsasl2-modules
+    state: present
+  tags: [install]
+
+- name: Configure Postfix relay
+  ansible.builtin.lineinfile:
+    path: /etc/postfix/main.cf
+    regexp: "^{{ item.key }}\\s*="
+    line: "{{ item.key }} = {{ item.value }}"
+  loop: "{{ proxmox_postfix_relay | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  notify: Reload postfix
+  tags: [config]
+
+- name: Deploy Postfix relay credentials
+  ansible.builtin.copy:
+    dest: /etc/postfix/sasl_passwd
+    owner: root
+    group: root
+    mode: "0600"
+    content: "[{{ mail_host }}]:{{ mail_port }} {{ mail_username }}:{{ mail_password }}\n"
+  no_log: true
+  notify: Rebuild Postfix credentials map
+  tags: [config]
+
+# The built-in matcher mails every notification, including "backup
+# successful". Only mail what needs attention.
+- name: Read default notification matcher
+  ansible.builtin.command: pvesh get /cluster/notifications/matchers/default-matcher --output-format json
+  register: proxmox_notify_matcher
+  changed_when: false
+  check_mode: false
+  tags: [config]
+
+- name: Mail only warnings and errors
+  ansible.builtin.command: pvesh set /cluster/notifications/matchers/default-matcher --match-severity warning,error
+  when: >-
+    (proxmox_notify_matcher.stdout | from_json)['match-severity'] | default([])
+    | join(',') != 'warning,error'
+  changed_when: true
+  tags: [config]
+
 # GPU passthrough uses Proxmox `devN` entries (proxmox_lxcs), which create
 # the device inside the CT with the right group. The world-writable rule
 # that used to grant access is removed so udev restores 0660 root:render.

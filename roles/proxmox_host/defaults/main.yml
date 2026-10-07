@@ -1,3 +1,15 @@
 ---
 # ZFS pool that gets the weekly TRIM timer.
 zfs_trim_pool: tank
+
+# Postfix main.cf settings for relaying host mail via the shared mail_* SMTP
+# account. Port 465 is implicit TLS (wrapper mode); 587 uses STARTTLS. IPv4
+# first: the host has no IPv6 route to the internet.
+proxmox_postfix_relay:
+  relayhost: "[{{ mail_host }}]:{{ mail_port }}"
+  smtp_tls_wrappermode: "{{ 'yes' if mail_port | string == '465' else 'no' }}"
+  smtp_tls_security_level: encrypt
+  smtp_sasl_auth_enable: "yes"
+  smtp_sasl_password_maps: hash:/etc/postfix/sasl_passwd
+  smtp_sasl_security_options: noanonymous
+  smtp_address_preference: ipv4

@@ -2,3 +2,14 @@
 - name: Reload udev rules
   ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger --action=add --subsystem-match=drm
   changed_when: false
+
+- name: Rebuild Postfix credentials map
+  # postmap creates the .db with the default umask; it holds the password too
+  ansible.builtin.shell: postmap /etc/postfix/sasl_passwd && chmod 0600 /etc/postfix/sasl_passwd.db
+  changed_when: true
+  notify: Reload postfix
+
+# Reload, then retry the queue now instead of at the next backoff interval.
+- name: Reload postfix
+  ansible.builtin.shell: systemctl reload postfix && postqueue -f
+  changed_when: true

@@ -8,6 +8,9 @@
 - name: Install base packages
   ansible.builtin.import_tasks: base_packages.yml
 
+- name: Harden SSH
+  ansible.builtin.import_tasks: sshd.yml
+
 - name: Configure unattended security upgrades
   ansible.builtin.import_tasks: unattended_upgrades.yml
 
