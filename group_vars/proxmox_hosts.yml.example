@@ -48,7 +48,8 @@ proxmox_lxcs:
       unprivileged: 1
   # ... tailscale_ctid and docker_ctid entries (see `pct config <ctid>`);
   # raw lxc.* lines (e.g. /dev/net/tun) go under `lxc:`; pass the GPU with
-  # `dev0: /dev/dri/renderD128,gid=<render gid inside the CT>` instead
+  # `dev0: /dev/dri/renderD128,gid=<render gid inside the CT>` instead;
+  # the Docker CT needs `features: keyctl=1,nesting=1`
   - ctid: "{{ monitoring_ctid }}"
     rootfs: tank:8
     config:

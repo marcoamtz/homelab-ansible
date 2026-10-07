@@ -52,6 +52,43 @@ module writes to a temp file and renames it. Pre-creating empty `.fw` files
 means template only ever overwrites in place. File ownership `root:www-data`
 mode `0640` matches what pmxcfs enforces.
 
+## Why LXC provisioning is create-only
+
+`roles/proxmox_lxc` creates missing containers and only *reports* drift on
+existing ones, so a playbook run never reconfigures a live container.
+Drift is surfaced as an ignored failure; reconcile it deliberately, either in
+`group_vars` or with `pct set`.
+
+Raw `lxc.*` lines are appended with `printf >>` before first start, because
+`pct` cannot set them and pmxcfs (see above) breaks `lineinfile`.
+
+## Why the GPU uses `dev0` instead of a udev rule
+
+Proxmox's native device passthrough (`devN`, PVE 8.2+) creates
+`/dev/dri/renderD128` inside the container owned by the given gid, mode
+`0660`. Jellyfin joins that group via `group_add: jellyfin_render_gid`. The
+older approach — raw `lxc.cgroup2`/`lxc.mount.entry` lines plus a host udev
+rule making the node `0666` — exposed the GPU to every host process;
+`proxmox_host` removes that rule.
+
+## Why third-party apt repos are deb822 with pinned keys
+
+Docker, NextDNS and Tailscale install through one shared task
+(`roles/common/tasks/apt_repository.yml`) using `deb822_repository` with
+`signed_by`, so each repository is pinned to its own key under
+`/etc/apt/keyrings/`. This replaces the vendors' `curl | sh` installers,
+which ran unaudited code as root; the task also removes the `.list` files
+those installers left behind.
+
+## Why the Proxmox host relays mail
+
+Proxmox sends backup, ZFS and SMART notifications through its local Postfix,
+which by default delivers straight to the recipient's MX on port 25. ISPs
+commonly block outbound port 25, and here every message sat deferred in the
+queue — failures would have gone unseen. `proxmox_host` points Postfix at
+the same authenticated SMTP account the containers use (`mail_*`), forcing
+IPv4 because the host has no IPv6 route to the internet.
+
 ## Why the LXC pre-start NFS hook exists
 
 On Proxmox boot, `pvestatd` (which mounts NFS storage) races
