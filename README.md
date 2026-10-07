@@ -257,7 +257,7 @@ pre-commit run --all-files
 
 The container roles include workarounds for Proxmox LXC containers —
 `systemctl` via command instead of the `systemd` module, pinned
-`resolv.conf`, sysctl via handler + `@reboot` cron, a pre-start NFS gate on
+`resolv.conf`, sysctl via `sysctl -p` + `@reboot` cron, a pre-start NFS gate on
 the host. The reasoning for each lives in
 [docs/architecture.md](docs/architecture.md).
 
