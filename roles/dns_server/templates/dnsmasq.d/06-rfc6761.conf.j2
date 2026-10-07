@@ -30,9 +30,6 @@ server=/{{ ns.hex | reverse | list | join('.') }}.ip6.arpa/
 server=/bind/
 server=/onion/
 
-# Forward Tailscale MagicDNS queries to the Tailscale daemon
-server=/{{ tailscale_domain }}/100.100.100.100
-
 # Do not forward reverse DNS lookups for link-local (fe80::/10) IPv6 addresses
 server=/8.e.f.ip6.arpa/
 server=/9.e.f.ip6.arpa/

@@ -17,8 +17,6 @@ dhcp_lease_max: 100
 
 nextdns_listen_port: 5053
 
-tailscale_domain: "example.ts.net"
-
 # Devices that bypass NextDNS filtering (receive router DNS instead).
 # These also get static DHCP leases from the entries below.
 bypass_devices:

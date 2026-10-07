@@ -18,7 +18,6 @@ Deploys [NextDNS CLI](https://github.com/nextdns/nextdns) and [dnsmasq](https://
 - Dnsmasq for DHCP and local DNS caching
 - Per-device DNS bypass (route specific devices to ISP DNS instead of NextDNS)
 - Static DHCP reservations
-- Tailscale MagicDNS forwarding
 - Dnsmasq config validation before restart
 - Stale config cleanup (removed local configs are removed from the server)
 - Post-deploy DNS smoke test
@@ -144,7 +143,6 @@ upgrades never require one.
    - `ipv6_prefix` — ULA prefix for IPv6
    - `dhcp_range_start`, `dhcp_range_end`, `dhcp_lease_time`, `dhcp_lease_max` — DHCP pool settings
    - `nextdns_listen_port` — port NextDNS CLI listens on locally
-   - `tailscale_domain` — your tailnet domain for MagicDNS forwarding
    - `bypass_devices` — devices that skip NextDNS filtering
    - `static_leases` — fixed DHCP reservations
    - `host_records` — DNS records for devices with static IPs that don't use DHCP
