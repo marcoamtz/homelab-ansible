@@ -87,7 +87,7 @@ Deploys host-level configuration to the Proxmox server.
 - Weekly TRIM for the ZFS tank pool (`zfs-trim-weekly@tank.timer`)
 - Pre-start hookscript that blocks listed containers from booting until their NFS sources are mounted
 - Postfix relay through the shared `mail_*` SMTP account, so Proxmox notifications (backups, ZFS, SMART) reach you — direct port-25 delivery is ISP-blocked
-- Notifications mailed only at warning/error severity — no "backup successful" mail
+- Notifications mailed only at warning/error severity, plus mail to root (ZFS, SMART) — no "backup successful" mail
 - SSH password authentication disabled (key-only)
 - Removes the legacy world-writable GPU udev rule (GPU access now comes from `dev0`)
 

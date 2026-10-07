@@ -42,7 +42,8 @@
   tags: [config]
 
 # The built-in matcher mails every notification, including "backup
-# successful". Only mail what needs attention.
+# successful". Only mail what needs attention. `unknown` is what mail to root
+# (zed, smartd, cron) gets when proxmox-mail-forward relays it.
 - name: Read default notification matcher
   ansible.builtin.command: pvesh get /cluster/notifications/matchers/default-matcher --output-format json
   register: proxmox_notify_matcher
@@ -50,11 +51,11 @@
   check_mode: false
   tags: [config]
 
-- name: Mail only warnings and errors
-  ansible.builtin.command: pvesh set /cluster/notifications/matchers/default-matcher --match-severity warning,error
+- name: Mail only warnings, errors and forwarded root mail
+  ansible.builtin.command: pvesh set /cluster/notifications/matchers/default-matcher --match-severity warning,error,unknown
   when: >-
     (proxmox_notify_matcher.stdout | from_json)['match-severity'] | default([])
-    | join(',') != 'warning,error'
+    | join(',') != 'warning,error,unknown'
   changed_when: true
   tags: [config]
 

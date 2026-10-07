@@ -90,8 +90,9 @@ Set an email on **Datacenter > Permissions > Users > root@pam**. Proxmox's
 default `mail-to-root` notification target sends there for backups, ZFS
 (`zed`) and SMART (`smartd`) events. `deploy-proxmox-host.yml` configures
 Postfix to relay through the `mail_*` SMTP account in `group_vars/all.yml`,
-and limits the `default-matcher` to `warning,error` severity, so successful
-backups don't send mail.
+and limits the `default-matcher` to `warning,error,unknown` severity, so
+successful backups don't send mail. `unknown` is mail sent to root by
+`zed` and `smartd`, forwarded through `proxmox-mail-forward`.
 
 Check delivery after the first deploy:
 

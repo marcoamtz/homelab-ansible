@@ -8,7 +8,10 @@ zfs_trim_pool: tank
 proxmox_postfix_relay:
   relayhost: "[{{ mail_host }}]:{{ mail_port }}"
   smtp_tls_wrappermode: "{{ 'yes' if mail_port | string == '465' else 'no' }}"
-  smtp_tls_security_level: encrypt
+  # secure = verify the certificate matches the relay host; encrypt alone
+  # would hand the SASL password to anyone able to intercept the connection
+  smtp_tls_security_level: secure
+  smtp_tls_CAfile: /etc/ssl/certs/ca-certificates.crt
   smtp_sasl_auth_enable: "yes"
   smtp_sasl_password_maps: hash:/etc/postfix/sasl_passwd
   smtp_sasl_security_options: noanonymous
