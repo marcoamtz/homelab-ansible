@@ -17,5 +17,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
+      # ansible.cfg points at ~/.ansible/vault_password; no vaulted data is
+      # committed, so syntax checks only need the file to exist.
+      - name: Provide dummy vault password
+        run: |
+          echo ci-dummy > "$RUNNER_TEMP/vault_password"
+          echo "ANSIBLE_VAULT_PASSWORD_FILE=$RUNNER_TEMP/vault_password" >> "$GITHUB_ENV"
       # Same hooks as local commits: yamllint, ansible-lint, whitespace
       - uses: pre-commit/action@v3.0.1
