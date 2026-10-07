@@ -26,8 +26,6 @@ IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
 
 [group management]
 
-|OUT ACCEPT -p udp -log nolog # Allow outbound UDP
-OUT ACCEPT -p tcp -log nolog # Allow outbound TCP
 IN ACCEPT -source +dc/local_net -p tcp -dport 22 -log nolog # Allow SSH Management
 IN ACCEPT -source +dc/local_net -p tcp -dport 8006 -log nolog # Allow Proxmox Web UI
 
