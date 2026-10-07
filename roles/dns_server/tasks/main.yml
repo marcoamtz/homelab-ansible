@@ -14,7 +14,7 @@
 - name: Bootstrap NextDNS CLI
   ansible.builtin.shell: |
     set -o pipefail
-    curl -sL https://nextdns.io/install | sh -s -- -id {{ nextdns_id }} -setup-router=false < /dev/null
+    curl -fsSL https://nextdns.io/install | sh -s -- -id {{ nextdns_id }} -setup-router=false < /dev/null
   args:
     creates: /usr/bin/nextdns
     executable: /bin/bash
