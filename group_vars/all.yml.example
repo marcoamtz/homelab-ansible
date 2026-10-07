@@ -1,5 +1,6 @@
 ---
-# Shared email settings — used by DNS alerts and Speedtest Tracker notifications.
+# Shared email settings — used by Speedtest Tracker notifications; also what
+# to enter in Uptime Kuma's SMTP notification (configured in its UI).
 mail_host: "smtp.gmail.com"
 mail_port: "465"
 mail_username: "you@example.com"

@@ -11,7 +11,3 @@
 - name: Configure locale
   ansible.builtin.import_tasks: locale.yml
   when: common_manage_locale
-
-- name: Configure msmtp mailer
-  ansible.builtin.import_tasks: install_msmtp.yml
-  when: common_enable_msmtp
