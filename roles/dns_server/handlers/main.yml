@@ -1,8 +1,4 @@
 ---
-- name: Reload systemd
-  ansible.builtin.command: systemctl daemon-reload
-  changed_when: false
-
 - name: Restart nextdns
   ansible.builtin.command: systemctl restart nextdns
   changed_when: true

@@ -226,17 +226,13 @@ Where `<PROXMOX_NFS_MEDIA_PATH>` and `<PROXMOX_NFS_COMPLETE_PATH>` are the Synol
 
 ### GPU passthrough (Intel Quick Sync)
 
-Jellyfin uses Intel Quick Sync for hardware video transcoding. The container must be **stopped** before adding these lines to `/etc/pve/lxc/<CTID>.conf`:
+Jellyfin uses Intel Quick Sync for hardware video transcoding. Pass the render node with Proxmox's native device passthrough (Proxmox VE 8.2+), owned by the container's `render` group (`getent group render` inside the container):
 
-```
-lxc.cgroup2.devices.allow: c 226:0 rwm
-lxc.cgroup2.devices.allow: c 226:128 rwm
-lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
+```bash
+pct set <CTID> --dev0 /dev/dri/renderD128,gid=<RENDER_GID>
 ```
 
-Restart the container after applying.
-
-The GPU devices also need world-readable permissions on the Proxmox host — unprivileged LXC UID mapping makes the render group inaccessible inside the container. This is handled by the `deploy-proxmox-host.yml` playbook, which installs a udev rule to persist the permissions across reboots.
+Restart the container after applying. Set the same gid as `jellyfin_render_gid` in `group_vars/docker_hosts.yml` — the Jellyfin container joins that group. No host udev rule or raw `lxc.*` lines are needed.
 
 ---
 

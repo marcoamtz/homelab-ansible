@@ -4,8 +4,6 @@ profile: production
 skip_list:
   # systemctl via command is deliberate: the Ansible systemd module cannot
   # enumerate units inside Proxmox LXC containers (see docs/architecture.md).
-  # curl|sh installers are the vendors' official install path; both are
-  # guarded with `creates:`.
   - command-instead-of-module
   # Variables are intentionally named for their subsystem (dnsmasq_*,
   # qbittorrent_*, tailscale_*) because they are shared between roles,

@@ -82,7 +82,6 @@ Creates the containers declared in `proxmox_lxcs` (`group_vars/proxmox_hosts.yml
 
 Deploys host-level configuration to the Proxmox server.
 
-- GPU device permissions for unprivileged LXC passthrough (udev rule)
 - Weekly TRIM for the OS drive (`fstrim.timer`)
 - Weekly TRIM for the ZFS tank pool (`zfs-trim-weekly@tank.timer`)
 
@@ -261,11 +260,14 @@ pre-commit install        # once; runs yamllint + ansible-lint on commit
 pre-commit run --all-files
 ```
 
+CI runs the same hooks on every push to `main` and on pull requests
+(`.github/workflows/lint.yml`).
+
 ## LXC Notes
 
 The container roles include workarounds for Proxmox LXC containers —
 `systemctl` via command instead of the `systemd` module, pinned
-`resolv.conf`, sysctl via `sysctl -p` + `@reboot` cron, a pre-start NFS gate on
+`resolv.conf`, sysctl via `sysctl -p` + a boot oneshot unit, a pre-start NFS gate on
 the host. The reasoning for each lives in
 [docs/architecture.md](docs/architecture.md).
 
@@ -294,7 +296,7 @@ group_vars/
   tailscale_nodes.yml.example      # Example Tailscale variables
 roles/
   common/                          # Base packages, locale, shared LXC plumbing
-    tasks/                         #   assert_debian, systemd_enable, sysctl_dropin, sysctl_reboot_cron
+    tasks/                         #   assert_debian, systemd_enable, sysctl_dropin, boot_oneshot
   dns_server/                      # NextDNS + dnsmasq
     templates/dnsmasq.d/           #   base config, DHCP, RFC 6761 special domains
     templates/nextdns.conf.j2      #   NextDNS CLI config
@@ -304,7 +306,7 @@ roles/
     templates/daemon.json.j2       #   Docker daemon config (IPv6, ip6tables)
   compose_stack/                   # Data-driven compose stacks (see defaults/main.yml)
     templates/                     #   dockge, jellyfin, speedtest-tracker, qbittorrent, uptime-kuma
-  proxmox_host/                    # GPU passthrough, TRIM timers, NFS pre-start hook
+  proxmox_host/                    # TRIM timers, NFS pre-start hook
     templates/wait-for-nfs.sh.j2   #   CT pre-start hook: block boot until NFS mounted
   proxmox_lxc/                     # Create-only LXC provisioning + drift check
   proxmox_firewall/                # Cluster + per-CT firewall configs

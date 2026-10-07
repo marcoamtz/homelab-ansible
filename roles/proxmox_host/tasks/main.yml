@@ -4,30 +4,14 @@
     name: common
     tasks_from: assert_debian
 
-# GPU passthrough for unprivileged LXC containers requires world-readable
-# /dev/dri devices. Without this, the UID mapping makes the render device
-# inaccessible inside the container.
-- name: Deploy GPU passthrough udev rule
-  ansible.builtin.copy:
-    content: 'SUBSYSTEM=="drm", MODE="0666"'
-    dest: /etc/udev/rules.d/99-gpu-passthrough.rules
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Reload udev rules
-  tags: [config]
-
-- name: Check for GPU render device
-  ansible.builtin.stat:
-    path: /dev/dri/renderD128
-  register: gpu_render_device
-  tags: [always]
-
-- name: Set GPU device permissions
+# GPU passthrough uses Proxmox `devN` entries (proxmox_lxcs), which create
+# the device inside the CT with the right group. The world-writable rule
+# that used to grant access is removed so udev restores 0660 root:render.
+- name: Remove world-writable GPU udev rule
   ansible.builtin.file:
-    path: /dev/dri/renderD128
-    mode: "0666"
-  when: gpu_render_device.stat.exists
+    path: /etc/udev/rules.d/99-gpu-passthrough.rules
+    state: absent
+  notify: Reload udev rules
   tags: [config]
 
 - name: Enable weekly TRIM for OS drive
@@ -63,11 +47,21 @@
     mode: "0755"
   tags: [config]
 
-- name: Wire pre-start NFS wait hook on LXCs
-  ansible.builtin.command: "pct set {{ item.key }} --hookscript local:snippets/wait-for-nfs.sh"
+- name: Read LXC configs for hookscript
+  ansible.builtin.command: pct config {{ item.key }}
   loop: "{{ lxc_pre_start_nfs_waits | dict2items }}"
   loop_control:
     label: "CT {{ item.key }}"
-  register: pct_hookscript_result
-  changed_when: false  # pct set is config-level idempotent; no diff signal
+  register: pct_config_result
+  changed_when: false
+  check_mode: false
+  tags: [config]
+
+- name: Wire pre-start NFS wait hook on LXCs
+  ansible.builtin.command: "pct set {{ item.item.key }} --hookscript local:snippets/wait-for-nfs.sh"
+  loop: "{{ pct_config_result.results }}"
+  loop_control:
+    label: "CT {{ item.item.key }}"
+  when: "'hookscript: local:snippets/wait-for-nfs.sh' not in item.stdout_lines"
+  changed_when: true
   tags: [config]

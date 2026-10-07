@@ -1,0 +1,31 @@
+---
+# Shared via import_role tasks_from. Caller sets `apt_repo_name`,
+# `apt_repo_key_url`, `apt_repo_uri`, `apt_repo_suites`,
+# `apt_repo_components` and `apt_repo_packages`.
+# deb822_repository downloads the signing key itself (armored or binary) to
+# /etc/apt/keyrings/<name>.{asc,gpg} and pins the repo to it.
+- name: Configure apt repository {{ apt_repo_name }}
+  ansible.builtin.deb822_repository:
+    name: "{{ apt_repo_name }}"
+    types: deb
+    uris: "{{ apt_repo_uri }}"
+    suites: "{{ apt_repo_suites }}"
+    components: "{{ apt_repo_components }}"
+    signed_by: "{{ apt_repo_key_url }}"
+  register: apt_repo_result
+  tags: [install]
+
+# Vendor install scripts write a one-line .list for the same repo.
+- name: Remove legacy apt source list {{ apt_repo_name }}
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/{{ apt_repo_name }}.list
+    state: absent
+  tags: [install]
+
+- name: Install packages from {{ apt_repo_name }}
+  ansible.builtin.apt:
+    name: "{{ apt_repo_packages }}"
+    state: present
+    # common already refreshed the cache; only re-read it when the repo is new
+    update_cache: "{{ apt_repo_result is changed }}"
+  tags: [install]

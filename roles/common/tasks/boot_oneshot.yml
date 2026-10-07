@@ -1,0 +1,51 @@
+---
+# Shared via import_role tasks_from. Caller sets `boot_oneshot_name` and
+# `boot_oneshot_commands` (list; prefix a command with `-` to ignore failure).
+# LXC containers do not reliably re-apply sysctl.d at boot, and Proxmox drops
+# runtime-added addresses on restart, so a oneshot unit re-applies them once
+# the network is up (see docs/architecture.md).
+- name: Deploy boot unit {{ boot_oneshot_name }}
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/{{ boot_oneshot_name }}.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible.
+      [Unit]
+      Description=Re-apply {{ boot_oneshot_name }} at boot
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      {% for command in boot_oneshot_commands %}
+      ExecStart={{ command }}
+      {% endfor %}
+
+      [Install]
+      WantedBy=multi-user.target
+  register: boot_oneshot_unit
+  tags: [config]
+
+# A task, not a handler: the unit must be loaded before it is enabled below.
+- name: Reload systemd for {{ boot_oneshot_name }}  # noqa: no-handler
+  ansible.builtin.command: systemctl daemon-reload
+  when: boot_oneshot_unit is changed
+  changed_when: true
+  tags: [config]
+
+- name: Enable boot unit {{ boot_oneshot_name }}
+  ansible.builtin.import_tasks: systemd_enable.yml
+  vars:
+    systemd_unit: "{{ boot_oneshot_name }}.service"
+  tags: [config]
+
+# Replaced by the unit above; previous versions used a @reboot cron, which
+# could fire before eth0 was configured.
+- name: Remove @reboot cron {{ boot_oneshot_name }}
+  ansible.builtin.cron:
+    name: "{{ boot_oneshot_name }}"
+    state: absent
+  tags: [config]
