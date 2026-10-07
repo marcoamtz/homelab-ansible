@@ -3,6 +3,8 @@ profile {{ nextdns_id }}
 listen :{{ nextdns_listen_port }}
 report-client-info true
 log-queries true
-cache-size {{ nextdns_cache_size }}
+# dnsmasq in front is the only cache — a second one here only adds a
+# loopback hop and stale copies.
+cache-size 0
 setup-router false
 auto-activate false
