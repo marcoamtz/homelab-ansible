@@ -7,6 +7,11 @@ dockge_stacks_dir: "/opt/stacks"
 # Bind mounts from Proxmox host NFS (configured in LXC config, not playbook)
 nas_media_path: "/mnt/nas/media"
 nas_complete_path: "/mnt/nas/complete"
+# Hard-fail the deploy if any of these is not mounted
+docker_required_mounts:
+  - "{{ nas_media_path }}"
+  - "{{ nas_complete_path }}"
+  - "{{ docker_tank_mount }}"
 
 # === Jellyfin ===
 jellyfin_config_dir: "/opt/stacks/jellyfin/config"
@@ -56,10 +61,3 @@ qbittorrent_complete_dir: "{{ nas_complete_path }}"
 # PUID/PGID for linuxserver images
 qbittorrent_puid: "1000"
 qbittorrent_pgid: "1000"
-
-# === Docker ===
-docker_timezone: "America/Mexico_City"
-# ULA subnet for Docker's default bridge network
-docker_ipv6_cidr: "fd00:dead:beef::/48"
-# ULA pool for Docker Compose networks (each gets a /64 from this range)
-docker_ipv6_pool: "fd00:dead:cafe::/48"

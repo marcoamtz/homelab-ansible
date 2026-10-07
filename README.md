@@ -136,6 +136,7 @@ upgrades never require one.
    - `jellyfin_port_http` — Jellyfin port (default: 8096)
    - `speedtest_port` — Speedtest Tracker port (default: 8088)
    - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
+   - `docker_timezone` — timezone for all containers
 
 7. Edit `group_vars/docker_hosts.yml` with your Docker settings:
    - `jellyfin_uid`, `jellyfin_gid` — container UID/GID for Jellyfin media access
@@ -146,12 +147,11 @@ upgrades never require one.
    - `qbittorrent_puid`, `qbittorrent_pgid` — file ownership for downloads
    - `nas_media_path` — bind mount path for Jellyfin media libraries (Synology NFS)
    - `nas_complete_path` — bind mount path for qBittorrent completed downloads (Synology NFS)
+   - `docker_required_mounts` — bind mounts that must be active before stacks start (deploy hard-fails otherwise)
    - `qbittorrent_incomplete_dir` — path for active downloads (ZFS bind mount)
    - `jellyfin_cache_dir` — path for Jellyfin cache data (ZFS bind mount)
    - `jellyfin_transcode_dir` — path for Jellyfin transcoding temp files (ZFS bind mount)
-   - `docker_timezone` — timezone for all containers
-   - `docker_ipv6_cidr` — ULA subnet for Docker's default bridge network
-   - `docker_ipv6_pool` — ULA pool for Docker Compose networks
+   - `docker_ipv6_cidr`, `docker_ipv6_pool` — optional; override the Docker IPv6 ULA ranges in `roles/docker_host/defaults/main.yml`
 
 8. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
    - `dns_ctid`, `tailscale_ctid`, `docker_ctid` — container IDs

@@ -15,3 +15,6 @@ jellyfin_port_http: 8096
 speedtest_port: 8088
 qbittorrent_port_webui: 8080
 qbittorrent_port_torrent: 6881
+
+# Timezone for containers (compose TZ / DISPLAY_TIMEZONE)
+docker_timezone: "America/Mexico_City"

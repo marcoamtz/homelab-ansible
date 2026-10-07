@@ -5,10 +5,7 @@
   ansible.builtin.command: findmnt --noheadings {{ item }}
   register: mount_check
   changed_when: false
-  loop:
-    - "{{ nas_media_path }}"
-    - "{{ nas_complete_path }}"
-    - "{{ docker_tank_mount }}"
+  loop: "{{ docker_required_mounts }}"
   tags: [always]
 
 - name: Ensure apt keyrings directory exists
