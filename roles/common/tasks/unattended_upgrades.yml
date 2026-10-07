@@ -1,0 +1,50 @@
+---
+# Daily security updates from the Debian security archive only. Third-party
+# repos (Docker, NextDNS, Tailscale) and point releases stay with
+# update-all.yml, so a Docker or containerd upgrade never restarts stacks
+# unattended. No reboots: LXC containers share the host kernel.
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+  tags: [install, unattended]
+
+- name: Enable daily unattended upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible.
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  tags: [config, unattended]
+
+# #clear drops the stock origins from 50unattended-upgrades, so the list
+# below is the complete set of allowed sources.
+- name: Limit unattended upgrades to Debian security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-local
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      // Managed by Ansible.
+      #clear Unattended-Upgrade::Origins-Pattern;
+      Unattended-Upgrade::Origins-Pattern {
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+      };
+      Unattended-Upgrade::Automatic-Reboot "false";
+  tags: [config, unattended]
+
+- name: Verify unattended-upgrades only allows the security archive
+  ansible.builtin.command: unattended-upgrade --dry-run --debug
+  register: common_unattended_dry_run
+  changed_when: false
+  check_mode: false
+  failed_when: >-
+    common_unattended_dry_run.rc != 0 or
+    (common_unattended_dry_run.stdout ~ common_unattended_dry_run.stderr)
+    is not search('Allowed origins are: origin=Debian,codename=\S+-security,label=Debian-Security\s*$', multiline=True)
+  tags: [validate, unattended]

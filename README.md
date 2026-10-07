@@ -104,6 +104,9 @@ unused dependency packages are removed after upgrades.
 No reboot handling on purpose: LXC containers share the host kernel, so container
 upgrades never require one.
 
+Between runs, the `common` role enables `unattended-upgrades` on every container,
+limited to the Debian security archive (no Docker/NextDNS/Tailscale repos, no reboots).
+
 ## Prerequisites
 
 - Proxmox LXC containers running Debian/Ubuntu with systemd
