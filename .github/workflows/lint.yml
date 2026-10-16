@@ -23,5 +23,11 @@ jobs:
         run: |
           echo ci-dummy > "$RUNNER_TEMP/vault_password"
           echo "ANSIBLE_VAULT_PASSWORD_FILE=$RUNNER_TEMP/vault_password" >> "$GITHUB_ENV"
-      # Same hooks as local commits: yamllint, ansible-lint, whitespace
-      - uses: pre-commit/action@v3.0.1
+      # Same hooks as local commits: yamllint, ansible-lint, whitespace.
+      # Inlined from pre-commit/action (unmaintained, pins Node 20 cache@v4).
+      - run: python -m pip install pre-commit
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: pre-commit run --show-diff-on-failure --color=always --all-files
