@@ -33,5 +33,7 @@ dhcp-name-match=set:hostname-ignore,wpad
 dhcp-name-match=set:hostname-ignore,localhost
 dhcp-ignore-names=tag:hostname-ignore
 
-add-mac
-add-subnet=32,128
+# No add-mac / per-client add-subnet: dnsmasq marks replies to queries
+# carrying either as uncacheable, which disables the cache above (and
+# NextDNS CLI runs with cache-size 0). NextDNS sees every query as
+# coming from this server.

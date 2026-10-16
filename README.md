@@ -23,7 +23,9 @@ Deploys [NextDNS CLI](https://github.com/nextdns/nextdns) and [dnsmasq](https://
 - Post-deploy DNS smoke test
 
 > Note: the NextDNS CLI config enables `log-queries` and `report-client-info`,
-> so DNS queries and client names are visible in your NextDNS dashboard.
+> so DNS queries are visible in your NextDNS dashboard. Dnsmasq does not
+> forward per-device info (that would disable its cache), so queries show
+> as coming from the DNS server, and cache hits are not logged.
 > Adjust `roles/dns_server/templates/nextdns.conf.j2` if you don't want that.
 
 ### `deploy-tailscale.yml` — Tailscale Subnet Router
