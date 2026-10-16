@@ -1,3 +1,9 @@
 ---
 # LXC network interface (net0 name in the CT config).
 tailscale_interface: eth0
+
+# ethtool -K arguments for forwarded UDP throughput
+# (https://tailscale.com/kb/1320/performance-best-practices). `gro on` is
+# needed because eth0 is a veth, where GRO is off by default and the kernel
+# skips all GRO (UDP included) while it is off; it also enables veth NAPI.
+tailscale_udp_gro_features: gro on rx-udp-gro-forwarding on rx-gro-list off

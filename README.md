@@ -34,6 +34,7 @@ Deploys [Tailscale](https://tailscale.com) as a subnet router and exit node, bri
 - IPv4 and IPv6 forwarding with SLAAC support (`accept_ra=2`)
 - Static ULA address assignment (coexists with SLAAC GUA), re-applied at boot by a oneshot unit
 - Subnet route and exit node advertising
+- UDP GRO forwarding on `eth0` for higher forwarded throughput, re-applied at boot
 - Post-deploy connectivity check
 
 ### `deploy-docker.yml` — Docker + Dockge
