@@ -6,5 +6,5 @@
   roles:
     - role: common
       vars:
-        common_extra_packages: [locales, ca-certificates]
+        common_extra_packages: [locales, ca-certificates, ethtool]
     - tailscale_node

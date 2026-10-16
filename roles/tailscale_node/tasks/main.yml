@@ -39,6 +39,27 @@
       - "-/sbin/ip -6 addr add {{ ula_address }} dev {{ tailscale_interface }}"
       # `-`: best effort, see docker_host
       - "-/usr/bin/rdisc6 -1 {{ tailscale_interface }}"
+      # `-`: a throughput tweak must not fail the unit
+      - "-/usr/sbin/ethtool -K {{ tailscale_interface }} {{ tailscale_udp_gro_features }}"
+
+# UDP GRO forwarding lets the kernel batch forwarded WireGuard packets
+# (Tailscale's recommendation for subnet routers and exit nodes). Not
+# persistent across restarts, hence also in the boot unit above.
+- name: Read UDP GRO offload state
+  ansible.builtin.command: ethtool -k {{ tailscale_interface }}
+  register: ts_offloads
+  changed_when: false
+  check_mode: false
+  tags: [config]
+
+- name: Enable UDP GRO forwarding
+  ansible.builtin.command: ethtool -K {{ tailscale_interface }} {{ tailscale_udp_gro_features }}
+  when: >-
+    'generic-receive-offload: on' not in ts_offloads.stdout or
+    'rx-udp-gro-forwarding: on' not in ts_offloads.stdout or
+    'rx-gro-list: off' not in ts_offloads.stdout
+  changed_when: true
+  tags: [config]
 
 # Proxmox ip6=auto handles GUA via SLAAC; add static ULA here so both coexist.
 - name: Assign static ULA address
