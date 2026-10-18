@@ -1,0 +1,11 @@
+---
+# Proxmox configures container networking through ifupdown
+# (/etc/network/interfaces). The Debian 13 template still enables
+# systemd-networkd.socket, so networkd starts and leaves every link
+# unmanaged; apt-daily's `apt-helper wait-online` then waits 30 s for it
+# and logs an error on every run. Masked, so presets cannot re-enable it.
+- name: Mask unused systemd-networkd
+  ansible.builtin.command: systemctl mask --now systemd-networkd.socket systemd-networkd.service
+  register: common_networkd_mask
+  changed_when: "'Created symlink' in common_networkd_mask.stderr"
+  tags: [config]

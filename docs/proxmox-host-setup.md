@@ -166,5 +166,5 @@ by hand:
   ```
   The gid is the container's `render` group (`getent group render`); set the
   same value as `jellyfin_render_gid` in `group_vars/docker_hosts.yml`.
-- **Tailscale and Docker** — SLAAC addresses must be covered by
+- **All containers** — SLAAC addresses must be covered by
   `ipfilter_v6_prefixes`, or the Proxmox firewall's `ipfilter-net0` drops them.

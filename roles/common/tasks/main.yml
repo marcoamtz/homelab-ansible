@@ -11,9 +11,11 @@
 - name: Harden SSH
   ansible.builtin.import_tasks: sshd.yml
 
+- name: Disable unused systemd-networkd
+  ansible.builtin.import_tasks: networkd.yml
+
 - name: Configure unattended security upgrades
   ansible.builtin.import_tasks: unattended_upgrades.yml
 
 - name: Configure locale
   ansible.builtin.import_tasks: locale.yml
-  when: common_manage_locale
