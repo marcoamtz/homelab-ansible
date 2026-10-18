@@ -1,6 +1,7 @@
 ---
+# Shared via import_role tasks_from (also used by proxmox_host).
 # Daily security updates from the Debian security archive only. Third-party
-# repos (Docker, NextDNS, Tailscale) and point releases stay with
+# repos (Docker, NextDNS, Tailscale, Proxmox) and point releases stay with
 # update-all.yml, so a Docker or containerd upgrade never restarts stacks
 # unattended. No reboots: LXC containers share the host kernel.
 - name: Install unattended-upgrades

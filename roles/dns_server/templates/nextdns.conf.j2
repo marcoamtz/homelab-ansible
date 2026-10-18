@@ -2,7 +2,9 @@
 profile {{ nextdns_id }}
 listen :{{ nextdns_listen_port }}
 report-client-info true
-log-queries true
+# Off: every query reached the journal as 127.0.0.1 (~27k lines/day, at the
+# journald size cap); the NextDNS dashboard keeps the query log.
+log-queries false
 # dnsmasq in front is the only cache — a second one here only adds a
 # loopback hop and stale copies.
 cache-size 0

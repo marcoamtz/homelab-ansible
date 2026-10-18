@@ -9,6 +9,13 @@
     name: common
     tasks_from: sshd
 
+# Debian security archive only: Proxmox packages and kernels stay manual
+# (docs/proxmox-host-setup.md, Host updates).
+- name: Configure unattended security upgrades
+  ansible.builtin.import_role:
+    name: common
+    tasks_from: unattended_upgrades
+
 # --- Mail relay ---
 # Proxmox notifications (vzdump, zed, smartd) go out through the local
 # Postfix. Direct delivery to port 25 is ISP-blocked, so relay through the

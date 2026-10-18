@@ -120,13 +120,26 @@ Synology.
   pct start 999 && pct exec 999 -- systemctl --failed
   pct stop 999 && pct destroy 999
   ```
+- `--storage` restores need a `size` on every volume mount point, including
+  ones excluded from the backup (`unable to detect disk size - please specify
+  mp0 (size)`). CT 102's `mp0` carries `size=0T` for that. Archives made
+  before it did need every mount point given explicitly instead; mp0 comes
+  back empty, as it is not in the backup:
+  ```bash
+  pct restore 999 <archive> --unique 1 --onboot 0 --rootfs tank:16 \
+    --mp0 tank:0,mp=/mnt/tank \
+    --mp1 /mnt/pve/klotnas-media,mp=/mnt/nas/media \
+    --mp2 /mnt/pve/klotnas-complete,mp=/mnt/nas/complete
+  ```
 - The live `group_vars`, `inventory.ini` and vault password are not in these
   backups — see Backup in the [README](../README.md#backup).
 
 ## Host updates
 
-`update-all.yml` and `unattended-upgrades` cover only the containers. Update
-the host by hand, and reboot when a new `proxmox-kernel` is installed:
+`deploy-proxmox-host.yml` enables `unattended-upgrades` for the Debian
+security archive only. Proxmox packages, kernels and Debian point releases
+are not in `update-all.yml` either: update the host by hand, and reboot when
+a new `proxmox-kernel` is installed:
 
 ```bash
 apt update && apt dist-upgrade
