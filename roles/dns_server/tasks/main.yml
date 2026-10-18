@@ -103,4 +103,6 @@
   ansible.builtin.command: dig +short +time=5 google.com @127.0.0.1
   register: dns_check
   changed_when: false
+  # dig exits 0 on SERVFAIL/NXDOMAIN; only an answer counts
+  failed_when: dns_check.rc != 0 or dns_check.stdout | length == 0
   tags: [validate]

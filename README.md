@@ -92,6 +92,7 @@ Deploys host-level configuration to the Proxmox server.
 - Postfix relay through the shared `mail_*` SMTP account, so Proxmox notifications (backups, ZFS, SMART) reach you — direct port-25 delivery is ISP-blocked
 - Notifications mailed only at warning/error severity, plus mail to root (ZFS, SMART) — no "backup successful" mail
 - SSH password authentication disabled (key-only)
+- `unattended-upgrades` limited to the Debian security archive
 - Removes the legacy world-writable GPU udev rule (GPU access now comes from `dev0`)
 
 ### `deploy-proxmox-firewall.yml` — Proxmox Firewall
@@ -113,9 +114,9 @@ unused dependency packages are removed after upgrades.
 No reboot handling on purpose: LXC containers share the host kernel, so container
 upgrades never require one.
 
-Between runs, the `common` role enables `unattended-upgrades` on every container,
-limited to the Debian security archive (no Docker/NextDNS/Tailscale repos, no reboots).
-The Proxmox host is not covered by either — update it by hand (see the
+Between runs, `unattended-upgrades` runs on every container and the Proxmox host,
+limited to the Debian security archive (no Docker/NextDNS/Tailscale/Proxmox repos, no reboots).
+Everything else on the host is updated by hand (see the
 [host setup guide](docs/proxmox-host-setup.md#host-updates)).
 
 ## Prerequisites
