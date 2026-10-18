@@ -207,7 +207,7 @@ Everything else on the host is updated by hand (see the
    - `proxmox_lxcs` — container definitions for `deploy-proxmox-lxcs.yml` (keys as `pct config` prints them; container-specific keys in the [host setup guide](docs/proxmox-host-setup.md#container-specifics))
    - `proxmox_lxc_template`, `proxmox_lxc_ssh_public_key` — optional; Debian template and the SSH key injected into new containers (defaults in `roles/proxmox_lxc/defaults/main.yml`)
    - `local_ipv4_subnet` — your LAN subnet
-   - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in the Tailscale and Docker container ipfilters (must cover SLAAC addresses)
+   - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in every container's ipfilter (must cover SLAAC addresses)
    - `lxc_pre_start_nfs_waits`, `lxc_pre_start_nfs_timeout` — per-CT list of NFS mount paths that must be mounted on the host before the LXC is allowed to start (eliminates bind-mount-captures-empty-dir race on Proxmox boot)
 
 ## Vault (Encrypted Secrets)

@@ -7,5 +7,4 @@
     - role: common
       vars:
         common_extra_packages: [dnsmasq, debian-archive-keyring, dnsutils]
-        common_manage_locale: false
     - dns_server

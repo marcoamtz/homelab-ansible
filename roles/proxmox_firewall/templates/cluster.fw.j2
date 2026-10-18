@@ -34,6 +34,8 @@ IN ACCEPT -source +dc/local_net -p tcp -dport 8006 -log nolog # Allow Proxmox We
 IN ACCEPT -source +dc/tailscale_net -log nolog # Exit Node: Tailscale to WAN
 IN ACCEPT -source +dc/tailscale_net -dest +dc/local_net -log nolog # Subnet Routing: Tailscale to Home
 IN ACCEPT -p udp -dport 41641 -log nolog # Tailscale WireGuard Port
+IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
+IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
 
 [group docker_services] # Rules for Docker container services
 
