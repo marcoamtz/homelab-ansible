@@ -54,6 +54,11 @@ Deploys [Docker CE](https://docs.docker.com/engine/) and [Dockge](https://github
 - All service ports configurable via group_vars
 - Post-deploy health checks
 
+Dockge runs its own bundled Compose, which hashes the same compose file
+differently from the host's. A stack Dockge last recreated (for example to
+pull a new image) is recreated once more by the next `deploy-docker.yml` run,
+with identical settings.
+
 > Note: one-time manual step after the first Jellyfin deploy — in Dashboard → Playback →
 > Transcoding, set "Fallback font folder path" to `/config/fonts` and enable fallback fonts.
 
