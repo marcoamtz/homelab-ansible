@@ -22,7 +22,7 @@ proxy_routes:
   - { name: nas, url: "https://192.168.1.5:5001", self_signed: true }
   - { name: jellyfin, url: "http://{{ proxy_docker_ip }}:{{ jellyfin_port_http }}" }
   - { name: dockge, url: "http://{{ proxy_docker_ip }}:{{ dockge_port }}" }
-  - { name: qbittorrent, url: "http://{{ proxy_docker_ip }}:{{ qbittorrent_port_webui }}" }
+  - { name: torrent, url: "http://{{ proxy_docker_ip }}:{{ qbittorrent_port_webui }}" }
   - { name: speedtest, url: "http://{{ proxy_docker_ip }}:{{ speedtest_port }}" }
   - { name: kuma, url: "http://{{ hostvars[groups['monitoring_hosts'][0]]['ansible_host'] }}:{{ uptime_kuma_port }}" }
 

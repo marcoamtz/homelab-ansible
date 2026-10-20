@@ -128,8 +128,8 @@ Synology.
   ```bash
   pct restore 999 <archive> --unique 1 --onboot 0 --rootfs tank:16 \
     --mp0 tank:0,mp=/mnt/tank \
-    --mp1 /mnt/pve/klotnas-media,mp=/mnt/nas/media \
-    --mp2 /mnt/pve/klotnas-complete,mp=/mnt/nas/complete
+    --mp1 /mnt/pve/nas-media,mp=/mnt/nas/media \
+    --mp2 /mnt/pve/nas-complete,mp=/mnt/nas/complete
   ```
 - The live `group_vars`, `inventory.ini` and vault password are not in these
   backups — see Backup in the [README](../README.md#backup).
