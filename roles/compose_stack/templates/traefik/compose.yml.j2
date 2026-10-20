@@ -1,0 +1,50 @@
+services:
+  traefik:
+    image: traefik:v3.7.13
+    restart: unless-stopped
+    command:
+      - --global.checkNewVersion=false
+      - --global.sendAnonymousUsage=false
+      # Serves /ping on the internal :8080 entrypoint (not published) for
+      # the healthcheck below. The API and dashboard stay disabled.
+      - --ping=true
+      - --entryPoints.web.address=:80
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      - --entryPoints.websecure.address=:443
+      - --entryPoints.websecure.http.tls.certResolver=duckdns
+      # Wildcard only: DuckDNS holds one TXT record per name, so the apex and
+      # wildcard challenges (same _acme-challenge name) cannot run together.
+      - --entryPoints.websecure.http.tls.domains[0].main=*.{{ proxy_domain }}
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --certificatesResolvers.duckdns.acme.storage=/data/acme.json
+      - --certificatesResolvers.duckdns.acme.dnsChallenge.provider=duckdns
+      - --certificatesResolvers.duckdns.acme.dnsChallenge.propagation.delayBeforeChecks=30s
+    # Public resolvers, not the LAN dnsmasq: it answers the proxy zone locally
+    # (hiding the challenge TXT record), and NextDNS behind it answers 0.0.0.0
+    # for DuckDNS's nameservers, which the DNS-01 check queries. Backends are
+    # addressed by IP, so nothing here needs LAN names.
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "{{ traefik_dynamic_dir }}:/etc/traefik/dynamic:ro"
+      - "{{ traefik_data_dir }}:/data"
+    env_file:
+      # DUCKDNS_TOKEN (root-only, rendered by Ansible)
+      - path: secrets.env
+        format: raw
+    environment:
+      TZ: "{{ docker_timezone }}"
+      # DuckDNS TXT updates can take minutes to reach its nameservers
+      DUCKDNS_PROPAGATION_TIMEOUT: "300"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,68 @@
+---
+# Without it Traefik starts healthy but never gets a certificate, serving its
+# self-signed default — fail here instead of in the route check below.
+- name: Assert the DuckDNS token is set
+  ansible.builtin.assert:
+    that: traefik_duckdns_token | length > 0
+    fail_msg: traefik_duckdns_token is empty — vault-encrypt it into group_vars/proxy_hosts.yml
+    quiet: true
+  tags: [always]
+
+# Rendered before the stack starts, so Traefik loads its routes on first boot.
+# Later changes are picked up by the file provider's watch — no restart.
+- name: Create Traefik dynamic config directory
+  ansible.builtin.file:
+    path: "{{ traefik_dynamic_dir }}"
+    state: directory
+    mode: "0755"
+  tags: [config]
+
+- name: Deploy Traefik routes
+  ansible.builtin.template:
+    src: dynamic.yml.j2
+    dest: "{{ traefik_dynamic_dir }}/routes.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [config]
+
+- name: Deploy Traefik stack
+  ansible.builtin.import_role:
+    name: compose_stack
+
+# End-to-end: name resolution (dnsmasq), the wildcard certificate (validated,
+# so Traefik's self-signed fallback fails the check) and each backend.
+# The long wait runs once: the first run waits for DNS-01 issuance, which can
+# take several minutes, and every route shares that one certificate.
+- name: Wait for the wildcard certificate
+  ansible.builtin.uri:
+    url: "https://{{ proxy_routes[0].name }}.{{ proxy_domain }}/"
+    method: GET
+    status_code: 200
+    validate_certs: true
+    return_content: false
+    timeout: 10
+    use_proxy: false
+  register: proxy_cert_check
+  until: (proxy_cert_check.status | default(0)) == 200
+  retries: 40
+  delay: 15
+  tags: [validate]
+
+- name: Verify every route
+  ansible.builtin.uri:
+    url: "https://{{ item.name }}.{{ proxy_domain }}/"
+    method: GET
+    status_code: 200
+    validate_certs: true
+    return_content: false
+    timeout: 10
+    use_proxy: false
+  register: proxy_route_check
+  until: (proxy_route_check.status | default(0)) == 200
+  retries: 3
+  delay: 5
+  loop: "{{ proxy_routes }}"
+  loop_control:
+    label: "{{ item.name }}"
+  tags: [validate]

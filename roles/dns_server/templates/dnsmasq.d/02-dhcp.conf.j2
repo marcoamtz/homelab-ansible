@@ -30,3 +30,11 @@ local=/{{ domain }}/
 {% for record in host_records %}
 host-record={{ record.name }}.{{ domain }},{{ record.ip }}
 {% endfor %}
+
+# Reverse proxy zone: every <name>.{{ proxy_domain }} resolves to the proxy CT,
+# answered locally — never forwarded to NextDNS, whose rebinding protection
+# could drop a public name resolving to a LAN address. `local=` makes other
+# record types (AAAA) NODATA: since dnsmasq 2.86, `address=` alone forwards
+# them, and NextDNS answered AAAA with `::`
+address=/{{ proxy_domain }}/{{ hostvars[groups['proxy_hosts'][0]]['ansible_host'] }}
+local=/{{ proxy_domain }}/

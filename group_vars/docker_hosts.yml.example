@@ -32,7 +32,6 @@ jellyfin_cjk_font_url: "https://raw.githubusercontent.com/notofonts/noto-cjk/San
 jellyfin_cjk_font_checksum: "sha256:b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a"
 
 # === Speedtest Tracker ===
-speedtest_url: "192.168.1.220"
 speedtest_config_dir: "/opt/stacks/speedtest-tracker/config"
 speedtest_puid: "1000"
 speedtest_pgid: "1000"

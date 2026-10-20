@@ -1,0 +1,37 @@
+---
+# === Traefik ===
+traefik_dir: "/opt/stacks/traefik"
+# Watched by Traefik's file provider: route changes apply without a restart.
+# Mounted as a directory — a single-file bind mount would keep pointing at the
+# old inode after Ansible's template module renames the new file into place.
+traefik_dynamic_dir: "{{ traefik_dir }}/dynamic"
+# acme.json: the wildcard certificate and ACME account key. Keep it across
+# redeploys, or every recreate re-issues against Let's Encrypt rate limits.
+traefik_data_dir: "{{ traefik_dir }}/data"
+# DuckDNS account token (DNS-01 challenge). Can rewrite the DNS record — vault only:
+#   ansible-vault encrypt_string --name traefik_duckdns_token
+traefik_duckdns_token: ""
+
+# === Routes ===
+# Each route is served at https://<name>.<proxy_domain>.
+#   url          backend URL
+#   self_signed  backend serves HTTPS with a self-signed certificate
+proxy_docker_ip: "{{ hostvars[groups['docker_hosts'][0]]['ansible_host'] }}"
+proxy_routes:
+  - { name: pve, url: "https://{{ hostvars[groups['proxmox_hosts'][0]]['ansible_host'] }}:8006", self_signed: true }
+  - { name: nas, url: "https://192.168.1.5:5001", self_signed: true }
+  - { name: jellyfin, url: "http://{{ proxy_docker_ip }}:{{ jellyfin_port_http }}" }
+  - { name: dockge, url: "http://{{ proxy_docker_ip }}:{{ dockge_port }}" }
+  - { name: torrent, url: "http://{{ proxy_docker_ip }}:{{ qbittorrent_port_webui }}" }
+  - { name: speedtest, url: "http://{{ proxy_docker_ip }}:{{ speedtest_port }}" }
+  - { name: kuma, url: "http://{{ hostvars[groups['monitoring_hosts'][0]]['ansible_host'] }}:{{ uptime_kuma_port }}" }
+
+# Replaces the docker_hosts stack list (see roles/compose_stack/defaults)
+compose_stacks:
+  - name: traefik
+    dir: "{{ traefik_dir }}"
+    template: traefik/compose.yml.j2
+    extra_dirs:
+      - path: "{{ traefik_data_dir }}"
+    secrets:
+      DUCKDNS_TOKEN: "{{ traefik_duckdns_token }}"
