@@ -167,9 +167,12 @@ edited through its UI, the Dockge problem again).
 DuckDNS stores one TXT record per name. The apex and wildcard challenges both
 use `_acme-challenge.<proxy_domain>`, so one certificate for both cannot pass
 validation at the same time. Every service uses a subdomain, so the wildcard
-alone covers them. The challenge's propagation check uses public resolvers:
-the container's own dnsmasq answers `<proxy_domain>` locally and would never
-see the TXT record.
+alone covers them.
+
+The Traefik container resolves through public DNS (`dns:` in its compose
+file), not the LAN dnsmasq: dnsmasq answers `<proxy_domain>` locally, so it
+would never see the challenge TXT record, and NextDNS behind it answers
+`0.0.0.0` for DuckDNS's nameservers, which the propagation check queries.
 
 ## Why the direct web ports are firewalled
 

@@ -20,10 +20,14 @@ services:
       - --providers.file.watch=true
       - --certificatesResolvers.duckdns.acme.storage=/data/acme.json
       - --certificatesResolvers.duckdns.acme.dnsChallenge.provider=duckdns
-      # Public resolvers: the CT's dnsmasq answers the proxy zone locally, so
-      # it cannot confirm the challenge TXT record has propagated.
-      - --certificatesResolvers.duckdns.acme.dnsChallenge.resolvers=1.1.1.1:53,9.9.9.9:53
       - --certificatesResolvers.duckdns.acme.dnsChallenge.propagation.delayBeforeChecks=30s
+    # Public resolvers, not the LAN dnsmasq: it answers the proxy zone locally
+    # (hiding the challenge TXT record), and NextDNS behind it answers 0.0.0.0
+    # for DuckDNS's nameservers, which the DNS-01 check queries. Backends are
+    # addressed by IP, so nothing here needs LAN names.
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9
     ports:
       - "80:80"
       - "443:443"
