@@ -10,11 +10,15 @@ docker-server ansible_host=192.168.1.212
 [monitoring_hosts]
 uptime-kuma ansible_host=192.168.1.215
 
+[proxy_hosts]
+reverse-proxy ansible_host=192.168.1.216
+
 [lxc_containers:children]
 dns_servers
 tailscale_nodes
 docker_hosts
 monitoring_hosts
+proxy_hosts
 
 [proxmox_hosts]
 proxmox ansible_host=192.168.1.200

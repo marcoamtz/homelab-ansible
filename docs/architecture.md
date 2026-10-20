@@ -149,3 +149,34 @@ config changes here.
 LXC containers share the host kernel. `apt dist-upgrade` inside a container
 never requires a container reboot; only host kernel updates matter, and the
 Proxmox host is deliberately excluded from that playbook.
+
+## Why the reverse proxy has its own container
+
+Traefik fronts the Proxmox UI, DSM and Uptime Kuma, not only the Docker
+stacks. On the Docker container it would inherit that container's NFS
+pre-start gate: with the NAS down, the proxy would be down too, taking the DSM
+page you need to fix the NAS with it. Same reasoning as Kuma's own container.
+
+Traefik over Caddy and Nginx Proxy Manager: the official Traefik image ships
+the DuckDNS DNS-01 provider (Caddy needs a custom `xcaddy` build), and its
+routes are a templated file Ansible owns (NPM keeps them in a SQLite database
+edited through its UI, the Dockge problem again).
+
+## Why the certificate is wildcard-only
+
+DuckDNS stores one TXT record per name. The apex and wildcard challenges both
+use `_acme-challenge.<proxy_domain>`, so one certificate for both cannot pass
+validation at the same time. Every service uses a subdomain, so the wildcard
+alone covers them. The challenge's propagation check uses public resolvers:
+the container's own dnsmasq answers `<proxy_domain>` locally and would never
+see the TXT record.
+
+## Why the direct web ports are firewalled
+
+The services speak plain HTTP, so logging in at `http://<docker-host>:8080`
+sends the password across the LAN unencrypted, readable by any compromised
+device on it. Behind the proxy, clients only speak TLS; the proxy-to-backend
+hop stays on the Proxmox bridge. The `web_clients` ipset limits the web ports
+to the proxy and Kuma (which monitors by IP), so the plain-HTTP path is closed
+rather than just unused. The Proxmox UI and DSM stay directly reachable: they
+already use HTTPS, and they are the way back in if the proxy is down.

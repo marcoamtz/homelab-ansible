@@ -1,0 +1,12 @@
+---
+- name: Deploy Traefik reverse proxy (LXC Optimized)
+  hosts: proxy_hosts
+  become: true
+
+  roles:
+    - role: common
+      vars:
+        # python3-debian is required by deb822_repository in docker_host
+        common_extra_packages: [ca-certificates, python3-debian]
+    - docker_host
+    - reverse_proxy

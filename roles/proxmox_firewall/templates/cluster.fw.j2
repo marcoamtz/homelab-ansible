@@ -14,6 +14,11 @@ fe80::/10
 {{ tailscale_ipv4_cidr }}
 {{ tailscale_ipv6_cidr }}
 
+[IPSET web_clients] # Allowed to reach service web UIs directly: the reverse proxy, and Uptime Kuma (monitors by IP)
+
+{{ hostvars[groups['proxy_hosts'][0]]['ansible_host'] }}
+{{ hostvars[groups['monitoring_hosts'][0]]['ansible_host'] }}
+
 [group dns_dhcp_services] # Rules for NextDNS and dnsmasq
 
 IN ACCEPT -source +dc/local_net -p udp -dport 53 -log nolog # DNS Queries (UDP)
@@ -39,10 +44,10 @@ IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
 
 [group docker_services] # Rules for Docker container services
 
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ dockge_port }} -log nolog # Dockge Web UI
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ jellyfin_port_http }} -log nolog # Jellyfin HTTP
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ speedtest_port }} -log nolog # Speedtest Tracker
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ qbittorrent_port_webui }} -log nolog # qBittorrent WebUI
+IN ACCEPT -source +dc/web_clients -p tcp -dport {{ dockge_port }} -log nolog # Dockge Web UI
+IN ACCEPT -source +dc/web_clients -p tcp -dport {{ jellyfin_port_http }} -log nolog # Jellyfin HTTP
+IN ACCEPT -source +dc/web_clients -p tcp -dport {{ speedtest_port }} -log nolog # Speedtest Tracker
+IN ACCEPT -source +dc/web_clients -p tcp -dport {{ qbittorrent_port_webui }} -log nolog # qBittorrent WebUI
 IN ACCEPT -p tcp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent TCP (peers)
 IN ACCEPT -p udp -dport {{ qbittorrent_port_torrent }} -log nolog # qBittorrent UDP (peers)
 IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
@@ -50,6 +55,13 @@ IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6
 
 [group monitoring] # Rules for Uptime Kuma
 
-IN ACCEPT -source +dc/local_net -p tcp -dport {{ uptime_kuma_port }} -log nolog # Uptime Kuma Web UI
+IN ACCEPT -source +dc/web_clients -p tcp -dport {{ uptime_kuma_port }} -log nolog # Uptime Kuma Web UI
+IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
+IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
+
+[group reverse_proxy] # Rules for Traefik
+
+IN ACCEPT -source +dc/local_net -p tcp -dport 443 -log nolog # HTTPS
+IN ACCEPT -source +dc/local_net -p tcp -dport 80 -log nolog # HTTP (redirects to HTTPS)
 IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping
 IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)

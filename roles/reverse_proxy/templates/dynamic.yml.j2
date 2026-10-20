@@ -1,0 +1,25 @@
+# Managed by Ansible (roles/reverse_proxy) — edits here are overwritten.
+http:
+  routers:
+{% for route in proxy_routes %}
+    {{ route.name }}:
+      rule: "Host(`{{ route.name }}.{{ proxy_domain }}`)"
+      entryPoints: [websecure]
+      service: {{ route.name }}
+{% endfor %}
+
+  services:
+{% for route in proxy_routes %}
+    {{ route.name }}:
+      loadBalancer:
+        servers:
+          - url: "{{ route.url }}"
+{% if route.self_signed | default(false) %}
+        serversTransport: self-signed
+{% endif %}
+{% endfor %}
+
+  serversTransports:
+    # Proxy-to-backend hop only, on the LAN; clients always see the wildcard cert
+    self-signed:
+      insecureSkipVerify: true

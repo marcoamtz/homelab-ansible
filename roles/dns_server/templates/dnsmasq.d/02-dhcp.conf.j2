@@ -30,3 +30,8 @@ local=/{{ domain }}/
 {% for record in host_records %}
 host-record={{ record.name }}.{{ domain }},{{ record.ip }}
 {% endfor %}
+
+# Reverse proxy zone: every <name>.{{ proxy_domain }} resolves to the proxy CT,
+# answered locally — never forwarded to NextDNS, whose rebinding protection
+# could drop a public name resolving to a LAN address
+address=/{{ proxy_domain }}/{{ hostvars[groups['proxy_hosts'][0]]['ansible_host'] }}

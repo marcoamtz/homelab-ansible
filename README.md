@@ -78,6 +78,27 @@ container, so it keeps alerting when the Docker or DNS container is down.
 > Push monitor (heartbeat interval ~10 min). Put the Push token in
 > `ipv6_dns_check_push_token` and re-run the playbook.
 
+### `deploy-proxy.yml` — Traefik Reverse Proxy
+
+Deploys [Traefik](https://doc.traefik.io/traefik/) on its own container as the
+HTTPS front door for every web UI, so they survive the Docker container being down
+and are served with a valid certificate on the LAN.
+
+- One Let's Encrypt wildcard certificate (`*.<proxy_domain>`) via the DuckDNS DNS-01
+  challenge — outbound-only, so it works behind CGNAT with nothing exposed
+- Routes from `proxy_routes`: `https://<name>.<proxy_domain>` to each backend,
+  including the Proxmox UI and Synology DSM (self-signed backends)
+- dnsmasq answers `<proxy_domain>` locally with the proxy's IP
+- Direct HTTP ports on the Docker and Kuma containers only accept the proxy and
+  Kuma (`web_clients` ipset), so logins no longer cross the LAN in plain text
+- Post-deploy check: each route must answer 200 with a valid certificate
+
+> One-time setup: create the DuckDNS subdomain and set its IPv4 to the proxy's
+> LAN IP (leave IPv6 empty, and run no DuckDNS updater — it would overwrite
+> it with your public IP). Point Jellyfin apps at `https://jellyfin.<proxy_domain>`.
+> For remote access, add `<proxy_domain>` as a Tailscale split-DNS domain
+> pointing to the DNS container.
+
 ### `deploy-proxmox-lxcs.yml` — LXC Provisioning
 
 Creates the containers declared in `proxmox_lxcs` (`group_vars/proxmox_hosts.yml`).
@@ -104,7 +125,7 @@ Deploys host-level configuration to the Proxmox server.
 
 Deploys firewall configuration to the Proxmox host, managing cluster-wide rules and per-container policies.
 
-- Cluster firewall with security groups (DNS/DHCP, management, Tailscale, Docker, monitoring)
+- Cluster firewall with security groups (DNS/DHCP, management, Tailscale, Docker, monitoring, reverse proxy)
 - IPSet-based network aliases (local network, Tailscale network)
 - Container-level firewall configs with IPv6 ipfilter for SLAAC
 - Compiled ruleset validated with `pve-firewall compile`, and the firewall checked active
@@ -151,6 +172,7 @@ Everything else on the host is updated by hand (see the
    cp group_vars/proxmox_hosts.yml.example group_vars/proxmox_hosts.yml
    cp group_vars/docker_hosts.yml.example group_vars/docker_hosts.yml
    cp group_vars/monitoring_hosts.yml.example group_vars/monitoring_hosts.yml
+   cp group_vars/proxy_hosts.yml.example group_vars/proxy_hosts.yml
    cp group_vars/all.yml.example group_vars/all.yml
    ```
 
@@ -184,12 +206,12 @@ Everything else on the host is updated by hand (see the
    - `qbittorrent_port_webui`, `qbittorrent_port_torrent` — qBittorrent ports (default: 8080, 6881)
    - `uptime_kuma_port` — Uptime Kuma web UI port (default: 3001)
    - `docker_timezone` — timezone for all containers
+   - `proxy_domain` — reverse proxy domain (e.g. `yourname.duckdns.org`); services are served at `<name>.<proxy_domain>`
 
 7. Edit `group_vars/docker_hosts.yml` with your Docker settings:
    - `dockge_data_dir`, `dockge_stacks_dir` — Dockge data and compose stacks directories
    - `jellyfin_uid`, `jellyfin_gid` — container UID/GID for Jellyfin media access
    - `jellyfin_render_gid` — `render` group inside the container (`getent group render`); must match the `gid=` on `dev0`
-   - `speedtest_url` — IP or hostname for Speedtest Tracker's APP_URL
    - `speedtest_app_key` — application key ([generate here](https://speedtest-tracker.dev/)); 🔒 vault-encrypt
    - `speedtest_schedule` — cron schedule for speed tests
    - `speedtest_servers` — comma-separated Ookla server IDs
@@ -207,8 +229,13 @@ Everything else on the host is updated by hand (see the
    - `compose_stacks` — replaces the Docker host stack list with only Uptime Kuma
    - `ipv6_dns_check_push_token` — Push monitor token; leave empty until the monitor exists (see [`deploy-monitoring.yml`](#deploy-monitoringyml--uptime-kuma))
 
-9. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
-   - `dns_ctid`, `tailscale_ctid`, `docker_ctid`, `monitoring_ctid` — container IDs
+9. Edit `group_vars/proxy_hosts.yml` with your reverse proxy settings:
+   - `traefik_duckdns_token` — DuckDNS account token for the DNS-01 challenge; 🔒 vault-encrypt
+   - `proxy_routes` — one entry per service: `name` (subdomain), `url` (backend), optional `self_signed: true`
+   - `compose_stacks` — replaces the Docker host stack list with only Traefik
+
+10. Edit `group_vars/proxmox_hosts.yml` with your Proxmox settings:
+   - `dns_ctid`, `tailscale_ctid`, `docker_ctid`, `monitoring_ctid`, `proxy_ctid` — container IDs
    - `proxmox_lxcs` — container definitions for `deploy-proxmox-lxcs.yml` (keys as `pct config` prints them; container-specific keys in the [host setup guide](docs/proxmox-host-setup.md#container-specifics))
    - `proxmox_lxc_template`, `proxmox_lxc_ssh_public_key` — optional; Debian template and the SSH key injected into new containers (defaults in `roles/proxmox_lxc/defaults/main.yml`)
    - `local_ipv4_subnet` — your LAN subnet
@@ -217,7 +244,7 @@ Everything else on the host is updated by hand (see the
 
 ## Vault (Encrypted Secrets)
 
-Sensitive values (`mail_password`, `speedtest_app_key`, `tailscale_auth_key`) are encrypted inline using `ansible-vault`. The vault password file at `~/.ansible/vault_password` is referenced in `ansible.cfg`, so playbooks decrypt automatically.
+Sensitive values (`mail_password`, `speedtest_app_key`, `tailscale_auth_key`, `traefik_duckdns_token`) are encrypted inline using `ansible-vault`. The vault password file at `~/.ansible/vault_password` is referenced in `ansible.cfg`, so playbooks decrypt automatically.
 
 **View a decrypted value:**
 
@@ -243,7 +270,12 @@ ansible-playbook deploy-dns.yml
 ansible-playbook deploy-tailscale.yml
 ansible-playbook deploy-docker.yml
 ansible-playbook deploy-monitoring.yml
+ansible-playbook deploy-proxy.yml
 ```
+
+The firewall only lets the proxy and Kuma reach the service web ports, so the
+web UIs are only reachable through `https://<name>.<proxy_domain>` once
+`deploy-proxy.yml` has run.
 
 Update all LXC container packages:
 
@@ -265,6 +297,7 @@ ansible-playbook deploy-dns.yml --check
 ansible-playbook deploy-tailscale.yml --check
 ansible-playbook deploy-docker.yml --check
 ansible-playbook deploy-monitoring.yml --check
+ansible-playbook deploy-proxy.yml --check
 ansible-playbook deploy-proxmox-firewall.yml --check
 ```
 
@@ -322,6 +355,7 @@ group_vars/
   dns_servers.yml.example          # Example DNS variables
   docker_hosts.yml.example         # Example Docker variables
   monitoring_hosts.yml.example     # Example Uptime Kuma variables
+  proxy_hosts.yml.example          # Example Traefik variables (routes, DuckDNS token)
   proxmox_hosts.yml.example        # Example Proxmox variables
   tailscale_nodes.yml.example      # Example Tailscale variables
 roles/
@@ -336,12 +370,13 @@ roles/
   docker_host/                     # Docker CE via deb822 repo, daemon.json, IPv6 RA
     templates/daemon.json.j2       #   Docker daemon config (IPv6, ip6tables)
   compose_stack/                   # Data-driven compose stacks (see defaults/main.yml)
-    templates/                     #   dockge, jellyfin, speedtest-tracker, qbittorrent, uptime-kuma
+    templates/                     #   dockge, jellyfin, speedtest-tracker, qbittorrent, uptime-kuma, traefik
+  reverse_proxy/                   # Traefik routes (file provider) + per-route HTTPS check
   proxmox_host/                    # TRIM timers, NFS pre-start hook, Postfix relay, SSH, GPU udev cleanup
     templates/wait-for-nfs.sh.j2   #   CT pre-start hook: block boot until NFS mounted
   proxmox_lxc/                     # Create-only LXC provisioning + drift check
   proxmox_firewall/                # Cluster + per-CT firewall configs
-    templates/                     #   cluster.fw, ct-dns.fw, ct-docker.fw, ct-tailscale.fw, ct-monitoring.fw
+    templates/                     #   cluster.fw, ct-dns.fw, ct-docker.fw, ct-tailscale.fw, ct-monitoring.fw, ct-proxy.fw
 .github/workflows/lint.yml         # CI: pre-commit hooks on push and PRs
 .pre-commit-config.yaml            # yamllint + ansible-lint hooks
 ansible.cfg                        # Ansible config (inventory, fact cache, callbacks)
@@ -352,6 +387,7 @@ deploy-monitoring.yml              # Uptime Kuma playbook (common + docker_host 
 deploy-proxmox-firewall.yml        # Proxmox firewall playbook
 deploy-proxmox-host.yml            # Proxmox host playbook
 deploy-proxmox-lxcs.yml            # LXC provisioning playbook (proxmox_lxc)
+deploy-proxy.yml                   # Reverse proxy playbook (common + docker_host + reverse_proxy)
 deploy-tailscale.yml               # Tailscale playbook (common + tailscale_node)
 update-all.yml                     # Update packages on all LXC containers
 inventory.ini.example              # Example inventory

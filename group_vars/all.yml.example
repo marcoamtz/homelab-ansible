@@ -20,3 +20,7 @@ uptime_kuma_port: 3001
 
 # Timezone for containers (compose TZ / DISPLAY_TIMEZONE)
 docker_timezone: "America/Mexico_City"
+
+# Reverse proxy domain: every proxied service is <name>.<proxy_domain>. Shared by
+# the proxy (routes, wildcard cert) and dnsmasq (local answer for the zone).
+proxy_domain: "yourname.duckdns.org"

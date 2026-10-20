@@ -4,6 +4,7 @@ dns_ctid: 100
 tailscale_ctid: 101
 docker_ctid: 102
 monitoring_ctid: 103
+proxy_ctid: 104
 
 # Local IPv4 subnet for firewall ipsets
 local_ipv4_subnet: "192.168.1.0/24"
@@ -64,5 +65,20 @@ proxmox_lxcs:
       onboot: 1
       ostype: debian
       startup: order=4
+      swap: 512
+      unprivileged: 1
+  - ctid: "{{ proxy_ctid }}"
+    rootfs: tank:8
+    config:
+      arch: amd64
+      cores: 1
+      features: nesting=1
+      hostname: reverse-proxy
+      memory: 512
+      nameserver: 192.168.1.210
+      net0: name=eth0,bridge=vmbr0,firewall=1,gw=192.168.1.1,hwaddr=BC:24:11:00:00:05,ip=192.168.1.216/24,ip6=auto,type=veth
+      onboot: 1
+      ostype: debian
+      startup: order=5
       swap: 512
       unprivileged: 1
