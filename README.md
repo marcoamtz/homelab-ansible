@@ -18,12 +18,13 @@ Deploys [NextDNS CLI](https://github.com/nextdns/nextdns) and [dnsmasq](https://
 - Dnsmasq for DHCP and local DNS caching
 - Per-device DNS bypass (route specific devices to ISP DNS instead of NextDNS)
 - Static DHCP reservations
-- Dnsmasq config validation before restart
+- Dnsmasq config validation before it is written and before any restart
 - Stale config cleanup (removed local configs are removed from the server)
-- Post-deploy DNS smoke test
+- Post-deploy DNS smoke test, run after the services restarted
 
-> Note: the NextDNS CLI config enables `log-queries` and `report-client-info`,
-> so DNS queries are visible in your NextDNS dashboard. Dnsmasq does not
+> Note: the NextDNS CLI config enables `report-client-info`, and DNS queries
+> are visible in your NextDNS dashboard (`log-queries` is off, so they are
+> not copied to the container's journal). Dnsmasq does not
 > forward per-device info (that would disable its cache), so queries show
 > as coming from the DNS server, and cache hits are not logged.
 > Adjust `roles/dns_server/templates/nextdns.conf.j2` if you don't want that.
@@ -117,6 +118,9 @@ Deploys host-level configuration to the Proxmox server.
 - Pre-start hookscript that blocks listed containers from booting until their NFS sources are mounted
 - Postfix relay through the shared `mail_*` SMTP account, so Proxmox notifications (backups, ZFS, SMART) reach you — direct port-25 delivery is ISP-blocked
 - Notifications mailed only at warning/error severity, plus mail to root (ZFS, SMART) — no "backup successful" mail
+- A second matcher mails newly available host package updates, since the host is upgraded by hand
+- Weekly archive of `/etc` (including `/etc/pve`) to `proxmox_host_config_backup_dir` — host config is in no vzdump backup
+- Optional ZFS ARC size cap (`zfs_arc_max`)
 - SSH password authentication disabled (key-only)
 - `unattended-upgrades` limited to the Debian security archive
 - Removes the legacy world-writable GPU udev rule (GPU access now comes from `dev0`)
@@ -129,6 +133,7 @@ Deploys firewall configuration to the Proxmox host, managing cluster-wide rules 
 - IPSet-based network aliases (local network, Tailscale network)
 - Container-level firewall configs with IPv6 ipfilter for SLAAC
 - Compiled ruleset validated with `pve-firewall compile`, and the firewall checked active
+- Rollback: if the new configs fail to render or compile, the previous files are restored
 
 ### `update-all.yml` — Package Updates
 
@@ -196,7 +201,7 @@ Everything else on the host is updated by hand (see the
    - `tailscale_auth_key` — auth key from the Tailscale admin console (🔒 vault-encrypt, see [Vault](#vault-encrypted-secrets))
    - `ula_address` — static ULA address for the container (assigned alongside SLAAC)
    - `tailscale_interface` — optional; LXC interface name (default `eth0`)
-   - `tailscale_args` — CLI flags for `tailscale up` (advertised routes, exit node, etc.)
+   - `tailscale_args` — CLI flags for `tailscale set` (advertised routes, exit node, etc.)
 
 6. Edit `group_vars/all.yml` with shared settings:
    - `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_from`, `mail_to` — SMTP settings for Speedtest notifications and the Proxmox host's Postfix relay (and to enter in Uptime Kuma); 🔒 vault-encrypt `mail_password`
@@ -240,6 +245,8 @@ Everything else on the host is updated by hand (see the
    - `proxmox_lxc_template`, `proxmox_lxc_ssh_public_key` — optional; Debian template and the SSH key injected into new containers (defaults in `roles/proxmox_lxc/defaults/main.yml`)
    - `local_ipv4_subnet` — your LAN subnet
    - `ipfilter_v6_prefixes` — IPv6 prefixes allowed in every container's ipfilter (must cover SLAAC addresses)
+   - `proxmox_host_config_backup_dir`, `proxmox_host_config_backup_keep` — where the weekly `/etc` archive goes (a subdirectory of a mounted storage; empty disables it) and how many to keep (default 8)
+   - `zfs_arc_max` — optional ZFS ARC size cap in bytes
    - `lxc_pre_start_nfs_waits`, `lxc_pre_start_nfs_timeout` — per-CT list of NFS mount paths that must be mounted on the host before the LXC is allowed to start (eliminates bind-mount-captures-empty-dir race on Proxmox boot)
 
 ## Vault (Encrypted Secrets)
@@ -372,14 +379,15 @@ roles/
   compose_stack/                   # Data-driven compose stacks (see defaults/main.yml)
     templates/                     #   dockge, jellyfin, speedtest-tracker, qbittorrent, uptime-kuma, traefik
   reverse_proxy/                   # Traefik routes (file provider) + per-route HTTPS check
-  proxmox_host/                    # TRIM timers, NFS pre-start hook, Postfix relay, SSH, GPU udev cleanup
+  proxmox_host/                    # TRIM timers, NFS pre-start hook, Postfix relay, SSH, config backup, ARC cap
     templates/wait-for-nfs.sh.j2   #   CT pre-start hook: block boot until NFS mounted
+    templates/host-config-backup.sh.j2 # weekly /etc archive
   proxmox_lxc/                     # Create-only LXC provisioning + drift check
   proxmox_firewall/                # Cluster + per-CT firewall configs
     templates/                     #   cluster.fw, ct-dns.fw, ct-docker.fw, ct-tailscale.fw, ct-monitoring.fw, ct-proxy.fw
 .github/workflows/lint.yml         # CI: pre-commit hooks on push and PRs
 .pre-commit-config.yaml            # yamllint + ansible-lint hooks
-ansible.cfg                        # Ansible config (inventory, fact cache, callbacks)
+ansible.cfg                        # Ansible config (inventory, fact cache, callbacks, SSH pipelining)
 requirements.yml                   # Collection pins (community.docker, ansible.posix)
 deploy-dns.yml                     # DNS playbook (common + dns_server)
 deploy-docker.yml                  # Docker playbook (common + docker_host + compose_stack)

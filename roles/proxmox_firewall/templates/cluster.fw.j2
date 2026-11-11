@@ -24,8 +24,6 @@ fe80::/10
 IN ACCEPT -source +dc/local_net -p udp -dport 53 -log nolog # DNS Queries (UDP)
 IN ACCEPT -source +dc/local_net -p tcp -dport 53 -log nolog # DNS Queries (TCP)
 IN ACCEPT -p udp -dport 67 -log nolog # DHCP Server
-IN ACCEPT -source +dc/local_net -p udp -dport 5353 -log nolog # mDNS Discovery
-IN ACCEPT -source +dc/local_net -p tcp -dport 80 -log nolog # LXC Web Dashboards
 IN ACCEPT -p icmp -log nolog # Allow IPv4 Ping from LAN
 IN ACCEPT -p ipv6-icmp -log nolog # Allow all ICMPv6 (RA, NS/NA, SLAAC)
 

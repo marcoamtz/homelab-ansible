@@ -131,6 +131,13 @@ Synology.
     --mp1 /mnt/pve/nas-media,mp=/mnt/nas/media \
     --mp2 /mnt/pve/nas-complete,mp=/mnt/nas/complete
   ```
+- vzdump backs up guests only. The host's own config (`/etc/pve`: storage,
+  this backup job, firewall, notifications; `/etc/modprobe.d/zfs.conf`) is
+  archived weekly by `deploy-proxmox-host.yml` to
+  `proxmox_host_config_backup_dir` as `host-etc-<host>-<date>.tar.zst`. It
+  holds secrets (`/etc/pve/priv`, `/etc/shadow`); treat the share accordingly.
+  On a rebuilt host, extract it to a scratch directory and copy back what you
+  need rather than unpacking over `/etc`.
 - The live `group_vars`, `inventory.ini` and vault password are not in these
   backups — see Backup in the [README](../README.md#backup).
 
@@ -139,7 +146,8 @@ Synology.
 `deploy-proxmox-host.yml` enables `unattended-upgrades` for the Debian
 security archive only. Proxmox packages, kernels and Debian point releases
 are not in `update-all.yml` either: update the host by hand, and reboot when
-a new `proxmox-kernel` is installed:
+a new `proxmox-kernel` is installed. Proxmox mails you when new packages
+become available (the `package-updates` notification matcher):
 
 ```bash
 apt update && apt dist-upgrade

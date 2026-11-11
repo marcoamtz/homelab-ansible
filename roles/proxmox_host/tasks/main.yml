@@ -66,6 +66,25 @@
   changed_when: true
   tags: [config]
 
+# pve-daily-update announces newly available packages at `info` severity,
+# which the matcher above drops. Host packages and kernels are upgraded by
+# hand, so this mail is the only prompt to do it.
+- name: Read notification matchers
+  ansible.builtin.command: pvesh get /cluster/notifications/matchers --output-format json
+  register: proxmox_notify_matchers
+  changed_when: false
+  check_mode: false
+  tags: [config]
+
+- name: Mail available host package updates
+  ansible.builtin.command: >-
+    pvesh create /cluster/notifications/matchers --name package-updates
+    --match-field exact:type=package-updates --target mail-to-root
+    --comment "Mail available package updates"
+  when: "'package-updates' not in (proxmox_notify_matchers.stdout | from_json | map(attribute='name'))"
+  changed_when: true
+  tags: [config]
+
 # GPU passthrough uses Proxmox `devN` entries (proxmox_lxcs), which create
 # the device inside the CT with the right group. The world-writable rule
 # that used to grant access is removed so udev restores 0660 root:render.
@@ -89,6 +108,64 @@
     tasks_from: systemd_enable
   vars:
     systemd_unit: "zfs-trim-weekly@{{ zfs_trim_pool }}.timer"
+
+# --- ZFS ARC cap ---
+- name: Cap the ZFS ARC size
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/zfs.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: "options zfs zfs_arc_max={{ zfs_arc_max }}\n"
+  when: zfs_arc_max | string | length > 0
+  notify: Rebuild initramfs
+  tags: [config]
+
+- name: Read running ZFS ARC cap
+  ansible.builtin.command: cat /sys/module/zfs/parameters/zfs_arc_max
+  register: proxmox_zfs_arc_running
+  when: zfs_arc_max | string | length > 0
+  changed_when: false
+  check_mode: false
+  tags: [config]
+
+- name: Apply ZFS ARC cap to the running system
+  ansible.builtin.shell: echo {{ zfs_arc_max }} > /sys/module/zfs/parameters/zfs_arc_max
+  when:
+    - zfs_arc_max | string | length > 0
+    - proxmox_zfs_arc_running.stdout | trim != zfs_arc_max | string
+  changed_when: true
+  tags: [config]
+
+# --- Host config backup ---
+- name: Deploy host config backup script
+  ansible.builtin.template:
+    src: host-config-backup.sh.j2
+    dest: /usr/local/sbin/host-config-backup.sh
+    owner: root
+    group: root
+    mode: "0700"
+  when: proxmox_host_config_backup_dir | length > 0
+  tags: [config]
+
+# After the 03:00 vzdump job. cron mails any output to root, which the
+# notification matcher forwards — the script is silent unless it fails.
+- name: Schedule weekly host config backup
+  ansible.builtin.cron:
+    name: host-config-backup
+    weekday: "0"
+    hour: "4"
+    minute: "30"
+    job: /usr/local/sbin/host-config-backup.sh
+  when: proxmox_host_config_backup_dir | length > 0
+  tags: [config]
+
+- name: Take the first host config backup
+  ansible.builtin.command: /usr/local/sbin/host-config-backup.sh
+  args:
+    creates: "{{ proxmox_host_config_backup_dir }}/host-etc-*.tar.zst"
+  when: proxmox_host_config_backup_dir | length > 0
+  tags: [config]
 
 # --- LXC pre-start NFS wait ---
 - name: Ensure Proxmox snippets directory exists
