@@ -2,7 +2,9 @@
 # Archive the host's /etc (including /etc/pve) to storage that survives the
 # host. vzdump only backs up guests: storage and backup job definitions,
 # firewall, notification and ZFS settings exist nowhere else.
-# The archive holds secrets (/etc/pve/priv, /etc/shadow), hence mode 0600.
+# The archive holds secrets (/etc/pve/priv, /etc/shadow). umask 077 keeps it
+# private where the storage honors modes; an NFS export that squashes
+# permissions (Synology) does not, so restrict access on the share itself.
 # Silent on success: cron mails any output to root.
 set -euo pipefail
 umask 077
