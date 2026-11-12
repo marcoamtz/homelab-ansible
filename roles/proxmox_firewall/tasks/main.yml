@@ -17,26 +17,72 @@
   loop: "{{ proxmox_firewall_configs | map(attribute='dest') | list }}"
   tags: [firewall, config]
 
-- name: Deploy firewall configs
-  ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: root
-    group: www-data
-    mode: "0640"
-  loop: "{{ proxmox_firewall_configs }}"
-  loop_control:
-    label: "{{ item.dest }}"
-  tags: [firewall, config]
-
-# Bad rules silently no-op otherwise. compile exits 0 even when it skips
-# invalid lines or groups, so any stderr output counts as a failure.
-- name: Validate compiled firewall ruleset
-  ansible.builtin.command: pve-firewall compile
-  register: pve_fw_compile
+# The template writes straight into the live config, pve-firewall applies it
+# within seconds, and `pve-firewall compile` can only check what is already
+# in /etc/pve. Copies of the previous files are kept, so a ruleset that fails
+# to render or compile is put back instead of staying live.
+- name: Create scratch directory for firewall rollback copies
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: .pve-firewall
+  register: proxmox_firewall_rollback
   changed_when: false
-  failed_when: pve_fw_compile.rc != 0 or pve_fw_compile.stderr | length > 0
-  tags: [firewall, validate]
+  check_mode: false
+  tags: [firewall, config, validate]
+
+- name: Keep rollback copies of the live firewall configs
+  ansible.builtin.command: >-
+    cp -p {{ proxmox_firewall_configs | map(attribute='dest') | map('quote') | join(' ') }}
+    {{ proxmox_firewall_rollback.path }}/
+  changed_when: false
+  check_mode: false
+  tags: [firewall, config, validate]
+
+- name: Deploy and validate firewall configs
+  tags: [firewall]
+  block:
+    - name: Deploy firewall configs
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: www-data
+        mode: "0640"
+      loop: "{{ proxmox_firewall_configs }}"
+      loop_control:
+        label: "{{ item.dest }}"
+      tags: [config]
+
+    # Bad rules silently no-op otherwise. compile exits 0 even when it skips
+    # invalid lines or groups, so any stderr output counts as a failure.
+    - name: Validate compiled firewall ruleset
+      ansible.builtin.command: pve-firewall compile
+      register: pve_fw_compile
+      changed_when: false
+      failed_when: pve_fw_compile.rc != 0 or pve_fw_compile.stderr | length > 0
+      tags: [validate]
+  rescue:
+    # cp, not the copy module: pmxcfs needs an in-place overwrite (see above).
+    - name: Restore previous firewall configs
+      ansible.builtin.command: cp {{ proxmox_firewall_rollback.path }}/{{ item | basename }} {{ item }}
+      loop: "{{ proxmox_firewall_configs | map(attribute='dest') | list }}"
+      changed_when: true
+      tags: [config, validate]
+
+    - name: Fail after restoring the previous firewall configs
+      ansible.builtin.fail:
+        msg: >-
+          Firewall config failed to render or compile; the previous configs
+          were restored. {{ ansible_failed_result.stderr | default(ansible_failed_result.msg | default('')) }}
+      tags: [config, validate]
+  always:
+    - name: Remove firewall rollback copies
+      ansible.builtin.file:
+        path: "{{ proxmox_firewall_rollback.path }}"
+        state: absent
+      changed_when: false
+      check_mode: false
+      tags: [config, validate]
 
 - name: Verify firewall is active
   ansible.builtin.command: pve-firewall status

@@ -1,0 +1,36 @@
+#!/bin/bash
+# Archive the host's /etc (including /etc/pve) to storage that survives the
+# host. vzdump only backs up guests: storage and backup job definitions,
+# firewall, notification and ZFS settings exist nowhere else.
+# The archive holds secrets (/etc/pve/priv, /etc/shadow). umask 077 keeps it
+# private where the storage honors modes; an NFS export that squashes
+# permissions (Synology) does not, so restrict access on the share itself.
+# Silent on success: cron mails any output to root.
+set -euo pipefail
+umask 077
+
+dest={{ proxmox_host_config_backup_dir | quote }}
+keep={{ proxmox_host_config_backup_keep | int }}
+parent=$(dirname "$dest")
+
+# Unmounted storage leaves an empty directory on the root disk; an archive
+# written there would be lost with the host.
+if [ ! -d "$parent" ] || [ "$(findmnt -n -o TARGET --target "$parent")" = "/" ]; then
+  echo "host-config-backup: $parent is not a mounted storage, nothing written" >&2
+  exit 1
+fi
+
+mkdir -p "$dest"
+archive="$dest/host-etc-$(hostname)-$(date +%F).tar.zst"
+
+# Exit status 1 = a file changed while being read; the archive is still good.
+rc=0
+tar --zstd --warning=no-file-changed -cf "$archive.tmp" -C / etc || rc=$?
+if [ "$rc" -gt 1 ]; then
+  rm -f "$archive.tmp"
+  echo "host-config-backup: tar failed with status $rc" >&2
+  exit 1
+fi
+mv "$archive.tmp" "$archive"
+
+ls -1t "$dest"/host-etc-*.tar.zst | tail -n +$((keep + 1)) | xargs -r rm -f --

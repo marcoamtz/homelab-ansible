@@ -39,6 +39,7 @@
     mode: "0755"
   tags: [config]
 
+# validate: a fragment with a syntax error never replaces the live file.
 - name: Deploy dnsmasq configurations
   ansible.builtin.template:
     src: "dnsmasq.d/{{ item }}.j2"
@@ -46,6 +47,7 @@
     owner: root
     group: root
     mode: "0644"
+    validate: dnsmasq --test --conf-file=%s
   loop: "{{ dnsmasq_configs }}"
   notify: Restart dnsmasq
   tags: [config]
@@ -66,6 +68,18 @@
     label: "{{ item.path | basename }}"
   when: item.path | basename not in dnsmasq_configs
   notify: Restart dnsmasq
+  tags: [config]
+
+# All fragments together, as the service loads them. The unit runs the same
+# check itself, but only after the old process has stopped, so a config that
+# fails there takes DNS down. --conf-dir is explicit: Debian passes the
+# directory through /etc/default/dnsmasq, so a bare `dnsmasq --test` only
+# reads the empty /etc/dnsmasq.conf. A task, not a handler: a failed handler
+# is not notified again on the next run, which would leave the bad config
+# waiting for the next restart.
+- name: Validate complete dnsmasq configuration
+  ansible.builtin.command: dnsmasq --test --conf-dir=/etc/dnsmasq.d,*.conf
+  changed_when: false
   tags: [config]
 
 - name: Fix LXC resolv.conf and prevent Proxmox overwrite
@@ -99,10 +113,20 @@
   vars:
     systemd_unit: dnsmasq
 
+# Restart now: handlers otherwise run at the end of the play, and the check
+# below would test the processes still running the old configuration.
+- name: Flush handlers so the DNS check runs against the new config
+  ansible.builtin.meta: flush_handlers
+  tags: [always]
+
 - name: Verify DNS resolution works
   ansible.builtin.command: dig +short +time=5 google.com @127.0.0.1
   register: dns_check
   changed_when: false
-  # dig exits 0 on SERVFAIL/NXDOMAIN; only an answer counts
-  failed_when: dns_check.rc != 0 or dns_check.stdout | length == 0
+  check_mode: false  # read-only; a skipped dig has no answer for `until`
+  # dig exits 0 on SERVFAIL/NXDOMAIN; only an answer counts. Retried: the
+  # services may have just restarted.
+  until: dns_check.rc == 0 and dns_check.stdout | length > 0
+  retries: 6
+  delay: 5
   tags: [validate]

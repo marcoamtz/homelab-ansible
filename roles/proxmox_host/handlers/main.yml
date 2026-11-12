@@ -13,3 +13,9 @@
 - name: Reload postfix
   ansible.builtin.shell: systemctl reload postfix && postqueue -f
   changed_when: true
+
+# zfs-initramfs copies /etc/modprobe.d/zfs.conf into the initramfs, where the
+# module is loaded at boot.
+- name: Rebuild initramfs
+  ansible.builtin.command: update-initramfs -u -k all
+  changed_when: true

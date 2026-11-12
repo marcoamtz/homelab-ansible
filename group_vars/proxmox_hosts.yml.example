@@ -16,6 +16,14 @@ ipfilter_v6_prefixes:
   - "fd00::/8"         # ULA
   - "fe80::/10"        # Link-local
 
+# === Host config backup ===
+# Weekly archive of /etc (incl. /etc/pve), which no vzdump backup contains.
+# A subdirectory of a mounted storage that survives the host; empty = off.
+proxmox_host_config_backup_dir: "/mnt/pve/nfs-backup/host-config"
+
+# ZFS ARC size cap in bytes (replaces /etc/modprobe.d/zfs.conf); empty = unmanaged.
+zfs_arc_max: ""
+
 # === LXC pre-start NFS wait ===
 # Block listed LXCs from booting until their bind-mount NFS sources are
 # mounted on the host. Eliminates the boot race where pvestatd hasn't yet

@@ -52,6 +52,24 @@ module writes to a temp file and renames it. Pre-creating empty `.fw` files
 means template only ever overwrites in place. File ownership `root:www-data`
 mode `0640` matches what pmxcfs enforces.
 
+A ruleset is live as soon as it is written: `pve-firewall` applies changes
+within seconds, and `pve-firewall compile` only reads `/etc/pve`. The role
+therefore copies the current files aside first and, if rendering or the
+compile check fails, copies them back (`cp`, in place) before failing.
+
+## Why dnsmasq is validated twice, by tasks
+
+Each fragment is checked with the template module's `validate:` before it
+replaces the live file, then the whole directory is checked with
+`dnsmasq --test --conf-dir=...`. Both are tasks, not handlers: when a handler
+fails, the changed file is already in place and the next run does not notify
+it again, so a bad config would sit unnoticed until the next dnsmasq restart
+— and the unit's own pre-start check runs after the old process has stopped.
+`--conf-dir` is explicit because Debian passes the directory through
+`/etc/default/dnsmasq`; a bare `dnsmasq --test` reads only the empty
+`/etc/dnsmasq.conf`. Handlers are flushed before the smoke test, so it
+queries the restarted services.
+
 ## Why LXC provisioning is create-only
 
 `roles/proxmox_lxc` creates missing containers and only *reports* drift on

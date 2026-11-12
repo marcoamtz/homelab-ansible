@@ -2,6 +2,18 @@
 # ZFS pool that gets the weekly TRIM timer.
 zfs_trim_pool: tank
 
+# ZFS ARC size cap in bytes, written to /etc/modprobe.d/zfs.conf (the whole
+# file) and applied to the running system. Empty = unmanaged.
+zfs_arc_max: ""
+
+# Weekly archive of /etc, including /etc/pve: host config (storage, backup
+# jobs, firewall, notifications) is in no vzdump backup. Must be a
+# subdirectory of a storage mount that survives the host, e.g.
+# /mnt/pve/<backup-storage>/host-config. Empty = not installed.
+proxmox_host_config_backup_dir: ""
+# Archives kept; older ones are deleted.
+proxmox_host_config_backup_keep: 8
+
 # Postfix main.cf settings for relaying host mail via the shared mail_* SMTP
 # account. Port 465 is implicit TLS (wrapper mode); 587 uses STARTTLS. IPv4
 # first: the host has no IPv6 route to the internet.
