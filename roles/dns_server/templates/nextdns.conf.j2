@@ -8,5 +8,9 @@ log-queries false
 # dnsmasq in front is the only cache — a second one here only adds a
 # loopback hop and stale copies.
 cache-size 0
+# Default 32: a device waking up sends 50+ lookups at once and the excess
+# failed fast ("too many inflight upstream requests"). 128 is the ceiling,
+# half of max-inflight-requests (256).
+max-inflight-upstream-requests 128
 setup-router false
 auto-activate false

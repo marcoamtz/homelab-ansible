@@ -1,0 +1,29 @@
+---
+# journald's default cap is 10% of the filesystem (about 800 MB on an 8 GB
+# root disk), with no age limit. Old logs filled it on the DNS container and
+# every nightly vzdump carried them. MaxFileSec matters as much as the other
+# two: journald only ever deletes whole files, and a quiet container would
+# otherwise keep months in a single file that the age limit cannot split.
+- name: Ensure journald drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags: [config]
+
+- name: Limit journal size and age
+  ansible.builtin.copy:
+    dest: /etc/systemd/journald.conf.d/10-ansible-retention.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible.
+      [Journal]
+      SystemMaxUse=200M
+      MaxRetentionSec=1month
+      MaxFileSec=1week
+  notify: Restart journald
+  tags: [config]
